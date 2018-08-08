@@ -1,0 +1,115 @@
+<template>
+    <view class="page">
+        <view class="page__bd">
+            <repeat for="{{list}}" key="id">
+                <navigator url="./account?id={{item.id}}&name={{item.name}}">
+                    <view class="category-item">
+                        <view class="item-left">
+                            <view class="icon">
+                                <image src="{{imgUrl}}{{item.icon}}"></image>
+                            </view>
+                        </view>
+                        <view class="item-right">
+                            <text class="title">{{item.name}}</text>
+                            <text class="count">{{item.count}}</text>
+                        </view>
+                    </view>
+                </navigator>
+            </repeat>
+
+            <view class="btn-wrap">
+                <button class="weui-btn" type="primary">添 加</button>
+            </view>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from 'wepy';
+    import categoryApi from '../apis/categoryApi';
+    import utils from '../lib/utils';
+    import env from '../lib/env';
+
+    export default class Category extends wepy.page {
+
+        config = {
+            navigationBarTitleText: '分组列表'
+        };
+
+        data = {
+            list: [],
+            imgUrl: env.imgUrl
+        };
+
+        methods = {};
+
+        async onLoad() {
+            utils.showLoading();
+            const result = await categoryApi.list();
+            utils.hideLoading();
+
+            this.list = result.data;
+            this.$apply();
+        }
+    }
+</script>
+
+<style type="less">
+    @import '../style/weui.less';
+
+    .category-item {
+        display: flex;
+        height: ~'120rpx';
+
+        .item-left {
+            padding-left: ~'36rpx';
+            padding-right: ~'25rpx';
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            .icon {
+                width: ~'90rpx';
+                height: ~'90rpx';
+                background-color: @weuiBgColorDefault;
+                border-radius: 50%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+
+                image {
+                    width: ~'90rpx';
+                    height: ~'90rpx';
+                }
+            }
+
+        }
+
+        .item-right {
+            display: flex;
+            justify-content: space-between;
+            flex-grow: 1;
+            border-bottom: 1px solid @weuiLineColorLight;
+            padding-right: ~'36rpx';
+
+            .title {
+                display: flex;
+                align-items: center;
+                padding-right: ~'20rpx';
+                font-size: ~'24rpx';
+                color: @weuiTextColorTitle;
+            }
+
+            .count {
+                display: flex;
+                align-items: center;
+                font-size: ~'24rpx';
+                color: @weuiTextColorWarn;
+            }
+        }
+    }
+
+    .btn-wrap {
+        padding: 15px;
+    }
+</style>

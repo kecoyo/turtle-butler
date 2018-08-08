@@ -1,0 +1,147 @@
+<template>
+    <view class="page">
+        <view class="page__bd">
+            <repeat for="{{list}}" key="id">
+                <navigator url="./account-detail?id={{item.id}}">
+                    <view class="account-item">
+                        <view class="account-item-inner">
+                            <view class="item-left">
+                                <view class="icon">
+                                    <image src='{{imgUrl}}/{{item.icon}}'></image>
+                                </view>
+                            </view>
+                            <view class="item-center">
+                                <view class="title">{{item.title}}</view>
+                                <view class="desc">{{item.subtitle}}</view>
+                            </view>
+                            <view class="item-right">
+                                <icon class="iconfont icon-right"></icon>
+                            </view>
+                        </view>
+                    </view>
+                </navigator>
+            </repeat>
+
+            <view class="btn-wrap">
+                <button class="weui-btn" type="primary">添 加</button>
+            </view>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from 'wepy';
+    import accountApi from '../apis/accountApi';
+    import utils from '../lib/utils';
+    import env from "../lib/env";
+
+    const icons = ['人字拖.png', '位置.png', '冰淇淋.png', '吊床.png', '地图.png', '地球仪.png', '墨镜.png', '巡航.png',
+        '帆船.png', '帕梅拉.png', '总线.png'];
+
+    export default class Account extends wepy.page {
+
+        config = {
+            navigationBarTitleText: ''
+        };
+
+        data = {
+            list: [],
+            imgUrl: env.imgUrl,
+            icons
+        };
+
+        methods = {};
+
+        async onLoad(options) {
+            this.categoryId = options.id;
+            this.categoryName = options.name;
+
+            // 修改标题
+            wx.setNavigationBarTitle({
+                title: this.categoryName
+            })
+
+            utils.showLoading();
+            let result = await accountApi.list({
+                categoryId: options.id
+            });
+            utils.hideLoading();
+
+            this.list = result.data;
+            this.$apply();
+        }
+    }
+</script>
+
+<style type="less">
+    @import '../style/weui.less';
+
+    .account-item {
+        padding-left: 20px;
+
+        .account-item-inner {
+            display: flex;
+            flex: 1;
+            height: ~'120rpx';
+            border-bottom: 1px solid @weuiLineColorLight;
+        }
+
+        .item-left {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 ~'15rpx';
+
+            .icon {
+                width: ~'90rpx';
+                height: ~'90rpx';
+                border-radius: ~'5rpx';
+                display: flex;
+                justify-content: center;
+                align-items: center;
+
+                image {
+                    width: ~'90rpx';
+                    height: ~'90rpx';
+                }
+            }
+
+        }
+
+        .item-center {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex-grow: 1;
+
+            .title {
+                display: flex;
+                align-items: center;
+                font-size: ~'24rpx';
+                color: @weuiTextColorTitle;
+            }
+
+            .desc {
+                display: flex;
+                align-items: center;
+                font-size: ~'24rpx';
+                color: @weuiTextColorGray;
+            }
+        }
+
+        .item-right {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-right: ~'25rpx';
+
+            icon {
+                color: @weuiTextColorGray;
+            }
+        }
+    }
+
+    .btn-wrap {
+        padding: 15px;
+    }
+</style>

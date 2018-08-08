@@ -1,0 +1,218 @@
+<template>
+    <view class="page">
+        <view class="page__bd">
+            <view class="space"></view>
+            <view class="primary-item">
+                <view class="item-left">
+                    <view class="picture">
+                        <image src="{{imgUrl}}{{account.icon}}"></image>
+                    </view>
+                </view>
+                <view class="item-center">
+                    <view class="primary">{{account.title}}</view>
+                    <view class="secondary">{{account.subtitle}}</view>
+                </view>
+                <view class="item-right">
+                </view>
+            </view>
+            <view class="space"></view>
+            <repeat for="{{account.propertys}}" key="id">
+                <view class="property-item">
+                    <view class="property-item-inner">
+                        <view class="item-center">
+                            <view class="property-name">{{item.name}}</view>
+                        </view>
+                        <view class="item-right">
+                            <view class="property-value">{{item.value}}</view>
+                        </view>
+                    </view>
+                </view>
+            </repeat>
+            <view class="space"></view>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from 'wepy';
+    import accountApi from '../apis/accountApi';
+    import utils from '../lib/utils';
+    import env from '../lib/env';
+
+    export default class AccountDetail extends wepy.page {
+
+        config = {
+            navigationBarTitleText: '账号详情'
+        };
+
+        data = {
+            account: [],
+            imgUrl: env.imgUrl
+        };
+
+        methods = {};
+
+        async onLoad(options) {
+            this.id = options.id || 1;
+
+            utils.showLoading();
+            let result = await accountApi.detail({
+                id: this.id
+            });
+            utils.hideLoading();
+
+            this.account = result.data;
+            this.$apply();
+        }
+    }
+</script>
+
+<style type="less">
+    @import '../style/weui.less';
+
+    page {
+        background-color: @weuiBgColorDefault;
+    }
+
+    .space {
+        height: ~'20rpx';
+    }
+
+    .primary-item {
+        background-color: #F8F8F8;
+        display: flex;
+        flex: 1;
+        border-bottom: 1px solid @weuiLineColorLight;
+        padding: ~'30rpx' 0 ~'30rpx' ~'20rpx';
+
+        .item-left {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 ~'15rpx';
+
+            .picture {
+                width: ~'90rpx';
+                height: ~'90rpx';
+                background-color: @weuiBgColorDefault;
+                border-radius: 50%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+
+                image {
+                    width: ~'70rpx';
+                    height: ~'70rpx';
+                }
+            }
+
+        }
+
+        .item-center {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex-grow: 1;
+
+            .primary {
+                display: flex;
+                align-items: center;
+                font-size: ~'30rpx';
+                height: ~'45rpx';
+                color: @weuiTextColorTitle;
+                font-weight: bold;
+            }
+
+            .secondary {
+                display: flex;
+                align-items: center;
+                font-size: ~'26rpx';
+                height: ~'45rpx';
+                color: @weuiTextColorTitle;
+            }
+        }
+
+        .item-right {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-right: ~'25rpx';
+
+            icon {
+                color: @weuiTextColorGray;
+            }
+        }
+    }
+
+    .property-item {
+        padding-left: 20px;
+        background-color: #F8F8F8;
+
+        .property-item-inner {
+            display: flex;
+            flex: 1;
+            height: ~'90rpx';
+            border-bottom: 1px solid @weuiLineColorLight;
+        }
+
+        .item-left {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 ~'15rpx';
+
+            .icon {
+                width: ~'90rpx';
+                height: ~'90rpx';
+                background-color: @weuiBgColorDefault;
+                border-radius: ~'5rpx';
+                display: flex;
+                justify-content: center;
+                align-items: center;
+
+                image {
+                    width: ~'70rpx';
+                    height: ~'70rpx';
+                }
+            }
+
+        }
+
+        .item-center {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex-grow: 1;
+
+            .property-name {
+                display: flex;
+                align-items: center;
+                font-size: ~'24rpx';
+                color: @weuiTextColorTitle;
+            }
+
+        }
+
+        .item-right {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-right: ~'25rpx';
+
+            .property-value {
+                display: flex;
+                align-items: center;
+                font-size: ~'24rpx';
+                color: @weuiTextColorGray;
+            }
+
+            icon {
+                color: @weuiTextColorGray;
+            }
+        }
+    }
+
+    .btn-wrap {
+        padding: 15px;
+    }
+</style>
