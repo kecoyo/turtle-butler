@@ -2,8 +2,7 @@
  * 开发环境
  */
 const development = {
-    apiPath: 'http://localhost:3000/api',
-    imgUrl: 'http://39.106.121.120'
+    apiPath: 'http://192.168.11.207:3000/api',
 };
 
 /**
@@ -11,7 +10,6 @@ const development = {
  */
 const production = {
     apiPath: 'http://39.106.121.120:3000/api',
-    imgUrl: 'http://39.106.121.120'
 };
 
 const env = production;

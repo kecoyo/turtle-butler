@@ -2,31 +2,23 @@
     <view class="page">
         <view class="page__bd">
             <view class="space"></view>
-            <view class="primary-item">
+            <view class="title-item">
                 <view class="item-left">
                     <view class="picture">
-                        <image src="{{imgUrl}}{{account.icon}}"></image>
+                        <image src="{{account.icon}}"></image>
                     </view>
                 </view>
                 <view class="item-center">
-                    <view class="primary">{{account.title}}</view>
-                    <view class="secondary">{{account.subtitle}}</view>
+                    <view class="title">{{account.title}}</view>
+                    <view class="subtitle">{{account.subtitle}}</view>
                 </view>
                 <view class="item-right">
                 </view>
             </view>
             <view class="space"></view>
             <repeat for="{{account.propertys}}" key="id">
-                <view class="property-item">
-                    <view class="property-item-inner">
-                        <view class="item-center">
-                            <view class="property-name">{{item.name}}</view>
-                        </view>
-                        <view class="item-right">
-                            <view class="property-value">{{item.value}}</view>
-                        </view>
-                    </view>
-                </view>
+                <text-item wx:if="{{item.type==1}}" :item="item"/>
+                <password-item wx:if="{{item.type==2}}" :item="item"/>
             </repeat>
             <view class="space"></view>
         </view>
@@ -38,11 +30,18 @@
     import accountApi from '../apis/accountApi';
     import utils from '../lib/utils';
     import env from '../lib/env';
+    import TextItem from '../components/text-item';
+    import PasswordItem from '../components/password-item';
 
     export default class AccountDetail extends wepy.page {
 
         config = {
             navigationBarTitleText: '账号详情'
+        };
+
+        components = {
+            'text-item': TextItem,
+            'password-item': PasswordItem
         };
 
         data = {
@@ -78,12 +77,11 @@
         height: ~'20rpx';
     }
 
-    .primary-item {
+    .title-item {
         background-color: #F8F8F8;
         display: flex;
         flex: 1;
-        border-bottom: 1px solid @weuiLineColorLight;
-        padding: ~'30rpx' 0 ~'30rpx' ~'20rpx';
+        padding: ~'20rpx' 0 ~'20rpx' ~'20rpx';
 
         .item-left {
             display: flex;
@@ -101,8 +99,8 @@
                 align-items: center;
 
                 image {
-                    width: ~'70rpx';
-                    height: ~'70rpx';
+                    width: 100%;
+                    height: 100%;
                 }
             }
 
@@ -114,21 +112,23 @@
             justify-content: center;
             flex-grow: 1;
 
-            .primary {
+            .title {
                 display: flex;
                 align-items: center;
                 font-size: ~'30rpx';
                 height: ~'45rpx';
                 color: @weuiTextColorTitle;
                 font-weight: bold;
+                padding: ~'5rpx';
             }
 
-            .secondary {
+            .subtitle {
                 display: flex;
                 align-items: center;
                 font-size: ~'26rpx';
                 height: ~'45rpx';
                 color: @weuiTextColorTitle;
+                padding: ~'5rpx';
             }
         }
 
@@ -157,54 +157,33 @@
 
         .item-left {
             display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0 ~'15rpx';
+            justify-content: flex-start;
+            align-items: center;
+            width: ~'180rpx';
 
-            .icon {
-                width: ~'90rpx';
-                height: ~'90rpx';
-                background-color: @weuiBgColorDefault;
-                border-radius: ~'5rpx';
-                display: flex;
-                justify-content: center;
-                align-items: center;
-
-                image {
-                    width: ~'70rpx';
-                    height: ~'70rpx';
-                }
+            text {
+                font-size: @weuiFontSize;
+                color: @weuiTextColorTitle;
             }
 
         }
 
         .item-center {
             display: flex;
-            flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
+            align-items: center;
             flex-grow: 1;
 
-            .property-name {
-                display: flex;
-                align-items: center;
-                font-size: ~'24rpx';
-                color: @weuiTextColorTitle;
+            text {
+                font-size: @weuiFontSize;
+                color: @weuiTextColorGray;
             }
-
         }
 
         .item-right {
             display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding-right: ~'25rpx';
-
-            .property-value {
-                display: flex;
-                align-items: center;
-                font-size: ~'24rpx';
-                color: @weuiTextColorGray;
-            }
+            align-items: center;
+            width: ~'60rpx';
 
             icon {
                 color: @weuiTextColorGray;

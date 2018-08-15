@@ -7,12 +7,12 @@
                         <view class="account-item-inner">
                             <view class="item-left">
                                 <view class="icon">
-                                    <image src='{{imgUrl}}/{{item.icon}}'></image>
+                                    <image src='{{item.icon}}'></image>
                                 </view>
                             </view>
                             <view class="item-center">
                                 <view class="title">{{item.title}}</view>
-                                <view class="desc">{{item.subtitle}}</view>
+                                <view class="subtitle">{{item.subtitle}}</view>
                             </view>
                             <view class="item-right">
                                 <icon class="iconfont icon-right"></icon>
@@ -117,14 +117,14 @@
             .title {
                 display: flex;
                 align-items: center;
-                font-size: ~'24rpx';
+                font-size: @weuiFontSize;
                 color: @weuiTextColorTitle;
             }
 
-            .desc {
+            .subtitle {
                 display: flex;
                 align-items: center;
-                font-size: ~'24rpx';
+                font-size: @weuiFontSize;
                 color: @weuiTextColorGray;
             }
         }

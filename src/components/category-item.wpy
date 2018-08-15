@@ -1,0 +1,114 @@
+<template>
+    <view class="category-item" bindtap="">
+        <view class="category-item-inner">
+            <view class="item-icon">
+                <view class="icon">
+                    <image src="{{item.icon}}"></image>
+                </view>
+            </view>
+            <view class="item-title">
+                <text wx:if="{{!isEditing}}" class="title">{{item.name}}</text>
+                <input wx:else class="title" value="{{item.name}}"/>
+            </view>
+            <view class="item-count">
+                <text class="count">{{item.count}}</text>
+            </view>
+        </view>
+    </view>
+</template>
+
+<script>
+
+    import wepy from 'wepy';
+    import utils from '../lib/utils';
+
+    /**
+     */
+    export default class CategoryItem extends wepy.component {
+
+        props = {
+            item: {type: Object, default: {}},
+        };
+
+        methods = {
+
+            itemClick(item) {
+                if (!this.isEditing) {
+                    wx.navigateTo({
+                        url: `./account?id=${item.id}&name=${item.name}`,
+                    });
+                }
+            },
+        }
+    }
+
+</script>
+
+<style lang="less">
+    @import '../style/weui.less';
+
+    .category-item {
+        display: flex;
+        height: ~'120rpx';
+
+        .category-item-inner {
+            display: flex;
+            flex-grow: 1;
+            box-sizing: border-box;
+            margin-left: ~'36rpx';
+            border-bottom: 1px solid @weuiLineColorLight;
+        }
+
+        .item-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            .icon {
+                width: ~'90rpx';
+                height: ~'90rpx';
+                background-color: @weuiBgColorDefault;
+                border-radius: 50%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+
+                image {
+                    width: 100%;
+                    height: 100%;
+                }
+            }
+
+        }
+
+        .item-title {
+            display: flex;
+            justify-content: space-between;
+            flex-grow: 1;
+            padding-left: ~'30rpx';
+            padding-right: ~'40rpx';
+
+            text {
+                display: flex;
+                align-items: center;
+                padding-right: ~'20rpx';
+                font-size: @weuiFontSize;
+                color: @weuiTextColorTitle;
+            }
+
+            input {
+
+            }
+
+        }
+        .item-count {
+            .count {
+                display: flex;
+                align-items: center;
+                font-size: @weuiFontSizeSm;
+                color: @weuiTextColorWarn;
+            }
+        }
+    }
+
+</style>

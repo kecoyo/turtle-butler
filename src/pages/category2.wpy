@@ -2,29 +2,24 @@
     <view class="page">
         <view class="page-body">
             <repeat for="{{list}}" key="index" index="index" item="item">
-                <view class="category-item" bindtap="itemTap(item)">
-                    <view class="category-item-drag {{dragItem && dragItem.id === item.id? 'mainmove':'mainend'}}"
-                          style="{{'left:0; top:'+ start.y +'px'}}">
-                        <view class="category-item-inner">
-                            <view class="item-icon">
-                                <view class="icon">
-                                    <image src="{{item.icon}}"></image>
-                                </view>
+                <navigator wx:if="{{!isEditing}}" url="./account?id={{item.id}}&name={{item.name}}">
+                    <category-item :item="item"/>
+                </navigator>
+                <view wx:else class="category-item {{mainx === index? 'mainmove':'mainend'}}"
+                      bindtouchstart="movestart({{index}})"
+                      bindtouchmove="move"
+                      bindtouchend="moveend({{index}})"
+                      wx:data-productid="101"
+                      style="left:0; top:{{start.y}}px">
+                    <view class="category-item-inner">
+                        <view class="item-icon">
+                            <view class="icon">
+                                <image src="{{item.icon}}"></image>
                             </view>
-                            <view class="item-title">
-                                <input wx:if="{{isEditing}}" value="{{item.name}}"/>
-                                <text wx:else>{{item.name}}</text>
-                            </view>
-                            <view wx:if="{{!isEditing}}" class="item-count">
-                                <text class="count">{{item.count}}</text>
-                            </view>
-                            <view wx:if="{{isEditing}}" class="item-drag"
-                                  bindtouchstart="movestart({{item}})"
-                                  bindtouchmove="move({{item}})"
-                                  bindtouchend="moveend({{item}})"
-                            >
-                                <icon type="success"/>
-                            </view>
+                        </view>
+                        <view class="item-title">
+                            <text wx:if="{{!isEditing}}">{{item.name}}</text>
+                            <input wx:else value="{{item.name}}"/>
                         </view>
                     </view>
                 </view>
@@ -54,6 +49,7 @@
     import wepy from 'wepy';
     import categoryApi from '../apis/categoryApi';
     import utils from '../lib/utils';
+    import CategoryItem from '../components/category-item';
 
     var x, y, x1, y1, x2, y2, index, currindex, n, yy;
     var arr1 = [];
@@ -61,8 +57,11 @@
     export default class Category extends wepy.page {
 
         config = {
-            navigationBarTitleText: '分组列表',
-            disableScroll: true
+            navigationBarTitleText: '分组列表'
+        };
+
+        components = {
+            'category-item': CategoryItem
         };
 
         data = {
@@ -73,9 +72,7 @@
 
             mainx: '',
             start: {x: 0, y: 0},
-            n: null,
-
-            dragItem: null
+            n: null
         };
 
         methods = {
@@ -90,7 +87,7 @@
                 this.isEditing = false;
 
             },
-            itemTap(item) {
+            itemClick(item) {
                 if (!this.isEditing) {
                     wx.navigateTo({
                         url: `./account?id=${item.id}&name=${item.name}`,
@@ -98,64 +95,40 @@
                 }
             },
 
-            movestart: function (item, e) {
-                if (!this.isEditing) return;
-
-                this.dragItem = item;
+            movestart: function (index, e) {
+                console.log('movestart');
+                console.log(this.list, index, e);
+                currindex = index;
                 x = e.touches[0].clientX;
                 y = e.touches[0].clientY;
                 x1 = e.currentTarget.offsetLeft;
                 y1 = e.currentTarget.offsetTop;
-
-                yy = e.currentTarget.offsetTop;
-                x2 = e.touches[0].clientX - x + x1;
-                y2 = e.touches[0].clientY - y + y1;
-
-                this.opacity = 0.5;
-                this.start = {x: x2, y: y2};
             },
-            move: function (item, e) {
-                if (!this.isEditing) return;
-
-                console.log('move', item, e);
+            move: function (e) {
+                console.log('move');
                 this.isMoving = true;
 
                 yy = e.currentTarget.offsetTop;
                 x2 = e.touches[0].clientX - x + x1;
                 y2 = e.touches[0].clientY - y + y1;
-
+                this.mainx = currindex;
                 this.opacity = 0.5;
                 this.start = {x: x2, y: y2};
 
-                console.log('y2:', y2);
-
-                var n = 0;
-                for (var k = 1; k < this.list.length; k++) {
-                    if (y2 > (60 * (k - 1) + 30)) {
+                var n = 1;
+                for (var k = 2; k < this.list.length; k++) {
+                    if (y2 > (60 * (k - 1) + k * 2 - 30)) {
                         n = k;
                     }
                 }
                 this.n = n;
-                console.log('n:', n);
 
-                var currIndex = this.list.findIndex((d) => d.id === this.dragItem.id);
-                console.log('currIndex:', currIndex);
-
-                if (currIndex !== n) {
-                    this.list = this.swapItems(this.list, currIndex, n);
-                }
 
             },
-            moveend: function (item, e) {
-                if (!this.isEditing) return;
+            moveend: function (e) {
                 if (!this.isMoving) return;
 
-
-                this.isMoving = false;
-                this.dragItem = null;
-                return;
-
-                console.log('moveend', item, e);
+                console.log('moveend', e);
                 if (y2 !== 0) {
                     console.log('y2:', y2);
                     var arr = this.data.list.slice(0);
@@ -187,19 +160,12 @@
                     this.list = arr;
                     this.opacity = 1;
                 }
-
             }
         };
 
-        swapItems(arr, index1, index2) {
-            arr[index1] = arr.splice(index2, 1, arr[index1])[0];
-            return arr;
-        }
-
         async onLoad() {
             utils.showLoading();
-            const result = await
-                categoryApi.list();
+            const result = await categoryApi.list();
             utils.hideLoading();
 
             this.list = result.data;
@@ -253,12 +219,6 @@
         display: flex;
         height: ~'120rpx';
 
-        .category-item-drag {
-            display: flex;
-            height: ~'120rpx';
-            flex: 1;
-        }
-
         .category-item-inner {
             display: flex;
             flex-grow: 1;
@@ -295,7 +255,6 @@
             flex-grow: 1;
             padding-left: ~'30rpx';
             padding-right: ~'40rpx';
-            box-sizing: border-box;
 
             text {
                 display: flex;
@@ -303,34 +262,20 @@
                 padding-right: ~'20rpx';
                 font-size: @weuiFontSize;
                 color: @weuiTextColorTitle;
-                box-sizing: border-box;
             }
 
             input {
-                width: 100%;
-                height: 100%;
-                font-size: @weuiFontSize;
-                box-sizing: border-box;
+
             }
 
         }
         .item-count {
-            display: flex;
-            align-items: center;
-            width: ~'60rpx';
-
             .count {
                 display: flex;
                 align-items: center;
                 font-size: @weuiFontSizeSm;
                 color: @weuiTextColorWarn;
             }
-        }
-
-        .item-drag {
-            display: flex;
-            align-items: center;
-            width: ~'60rpx';
         }
     }
 
@@ -342,7 +287,6 @@
         width: 100%;
         z-index: 10;
         opacity: 0.5;
-        box-shadow: 0px 0px 20px #333333;
 
     }
 
