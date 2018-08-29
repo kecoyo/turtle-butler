@@ -11,7 +11,7 @@ const utils = {
     showToast(title, icon) {
         wx.showToast({
             icon: icon || 'none',
-            title: title || '',
+            title: title ? title.toString() : '',
             duration: 2000
         });
     },
@@ -25,6 +25,20 @@ const utils = {
         return str.replace(/&(lt|gt|nbsp|amp|quot);/ig, function (all, t) {
             return arrEntities[t];
         });
+    },
+    px2rem(px) {
+        return (750 / wx.getSystemInfoSync().screenWidth) * px;
+    },
+    rem2px(rem) {
+        return (wx.getSystemInfoSync().screenWidth / 750) * rem;
+    },
+    // 获取上一级页面
+    getParentPage($this) {
+        let pages = $this.getCurrentPages();
+        if (pages.length > 1) {
+            return pages[pages.length - 2];
+        }
+        return null;
     }
 };
 

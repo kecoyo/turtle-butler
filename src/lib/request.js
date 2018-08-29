@@ -19,6 +19,7 @@ const request = {
     post(url, data, config) {
         return new Promise((resolve, reject) => {
             wx.request({
+                method: 'POST',
                 url,
                 data: data,
                 header: {

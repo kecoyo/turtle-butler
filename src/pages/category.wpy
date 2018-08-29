@@ -2,51 +2,69 @@
     <view class="page">
         <view class="page-body">
             <repeat for="{{list}}" key="index" index="index" item="item">
-                <view class="category-item" bindtap="itemTap(item)">
-                    <view class="category-item-drag {{dragItem && dragItem.id === item.id? 'mainmove':'mainend'}}"
-                          style="{{'left:0; top:'+ start.y +'px'}}">
-                        <view class="category-item-inner">
+                <view wx:if="{{isEditing}}">
+                    <div wx:if="{{toIndex == index && startIndex >= index}}" class="category-item">
+                        <view class="bottom-border"></view>
+                    </div>
+                    <view class="category-item {{startIndex == index ? 'mainmove':'mainend'}}"
+                          style="{{'left:0; top:'+ dragTop +'px'}}">
+                        <view class="bottom-border">
                             <view class="item-icon">
-                                <view class="icon">
-                                    <image src="{{item.icon}}"></image>
+                                <view class="icon" bindtap="selectIcon({{index}})">
+                                    <image src="{{iconUrl + item.icon}}"></image>
                                 </view>
                             </view>
                             <view class="item-title">
-                                <input wx:if="{{isEditing}}" value="{{item.name}}"/>
-                                <text wx:else>{{item.name}}</text>
+                                <input value="{{item.name}}" bindinput="input({{index}})"/>
                             </view>
-                            <view wx:if="{{!isEditing}}" class="item-count">
-                                <text class="count">{{item.count}}</text>
-                            </view>
-                            <view wx:if="{{isEditing}}" class="item-drag"
-                                  bindtouchstart="movestart({{item}})"
-                                  bindtouchmove="move({{item}})"
-                                  bindtouchend="moveend({{item}})"
-                            >
-                                <icon type="success"/>
+                            <view class="item-drag" catchtouchstart="movestart({{index}})" catchtouchmove="move"
+                                  catchtouchend="moveend">
+                                <icon class="iconfont icon-tuodong"></icon>
                             </view>
                         </view>
                     </view>
+                    <div wx:if="{{toIndex == index && startIndex < index}}" class="category-item">
+                        <view class="bottom-border"></view>
+                    </div>
                 </view>
+                <navigator wx:else url="./account?categoryId={{item.id}}&categoryName={{item.name}}">
+                    <view class="category-item">
+                        <view class="bottom-border">
+                            <view class="item-icon">
+                                <view class="icon">
+                                    <image src="{{iconUrl + item.icon}}"></image>
+                                </view>
+                            </view>
+                            <view class="item-title">
+                                <text>{{item.name}}</text>
+                            </view>
+                            <view class="item-count">
+                                <text class="count">{{item.count}}</text>
+                            </view>
+                        </view>
+                    </view>
+                </navigator>
             </repeat>
         </view>
-        <view class="page-footer">
-            <view wx:if="{{!isEditing}}" class="footer-wrap">
-                <view class="fleft">
+
+        <view class="op-footer">
+            <block wx:if="{{!isEditing}}">
+                <view class="op-left">
                 </view>
-                <view class="fright" bindtap="startEdit()">
-                    编辑
+                <view class="op-right">
+                    <view class="op" bindtap="startEdit()">编辑</view>
                 </view>
-            </view>
-            <view wx:else class="footer-wrap">
-                <view class="fleft" bindtap="cancelEdit()">
-                    取消
+            </block>
+            <block wx:else>
+                <view class="op-left">
+                    <view class="op" bindtap="cancelEdit()">取消</view>
                 </view>
-                <view class="fright" bindtap="doneEdit()">
-                    完成
+                <view class="op-right">
+                    <view class="op" bindtap="doneEdit()">完成</view>
                 </view>
-            </view>
+            </block>
         </view>
+
     </view>
 </template>
 
@@ -55,40 +73,61 @@
     import categoryApi from '../apis/categoryApi';
     import utils from '../lib/utils';
 
-    var x, y, x1, y1, x2, y2, index, currindex, n, yy;
-    var arr1 = [];
+    let y, y1, y2;
+
+    // 列表元素高度
+    let itemHeight = utils.rem2px(120);
 
     export default class Category extends wepy.page {
 
         config = {
-            navigationBarTitleText: '分组列表',
-            disableScroll: true
+            navigationBarTitleText: '分组列表'
         };
 
         data = {
             list: [],
+            iconUrl: '',
+
             isEditing: false,
 
-            isMoving: false,
-
-            mainx: '',
-            start: {x: 0, y: 0},
-            n: null,
-
-            dragItem: null
+            startIndex: -1, // 原始位置
+            toIndex: -1, // 目标位置
+            dragTop: -1, // 拖动元素的top
         };
 
         methods = {
             startEdit() {
                 this.isEditing = true;
+                this.listCopy = this.list.slice(0);
             },
             doneEdit() {
+
+                let data = this.list.map((item, i) => ({
+                    id: item.id,
+                    name: item.name,
+                    icon: item.icon
+                }));
+
+                utils.showLoading();
+                categoryApi.saveAll(data)
+                    .then(result => {
+                        utils.hideLoading();
+                        utils.showToast('保存成功', 'success');
+                    })
+                    .catch(() => {
+                        utils.showToast('保存失败');
+                    });
+
                 this.isEditing = false;
 
             },
             cancelEdit() {
                 this.isEditing = false;
-
+                this.list = this.listCopy;
+            },
+            input(index, e) {
+                console.log(index, e);
+                this.list[index].name = e.detail.value;
             },
             itemTap(item) {
                 if (!this.isEditing) {
@@ -97,112 +136,63 @@
                     });
                 }
             },
-
-            movestart: function (item, e) {
+            movestart: function (index, e) {
                 if (!this.isEditing) return;
 
-                this.dragItem = item;
-                x = e.touches[0].clientX;
                 y = e.touches[0].clientY;
-                x1 = e.currentTarget.offsetLeft;
                 y1 = e.currentTarget.offsetTop;
-
-                yy = e.currentTarget.offsetTop;
-                x2 = e.touches[0].clientX - x + x1;
                 y2 = e.touches[0].clientY - y + y1;
 
-                this.opacity = 0.5;
-                this.start = {x: x2, y: y2};
+                this.startIndex = index;
+                this.toIndex = index;
+                this.dragTop = y2;
+
             },
-            move: function (item, e) {
+            move: function (e) {
                 if (!this.isEditing) return;
 
-                console.log('move', item, e);
-                this.isMoving = true;
-
-                yy = e.currentTarget.offsetTop;
-                x2 = e.touches[0].clientX - x + x1;
                 y2 = e.touches[0].clientY - y + y1;
 
-                this.opacity = 0.5;
-                this.start = {x: x2, y: y2};
-
-                console.log('y2:', y2);
-
-                var n = 0;
-                for (var k = 1; k < this.list.length; k++) {
-                    if (y2 > (60 * (k - 1) + 30)) {
-                        n = k;
+                var toIndex = 0;
+                for (var i = 1; i < this.list.length; i++) {
+                    if (y2 > (itemHeight * (i - 1) + itemHeight / 2)) {
+                        toIndex = i;
                     }
                 }
-                this.n = n;
-                console.log('n:', n);
 
-                var currIndex = this.list.findIndex((d) => d.id === this.dragItem.id);
-                console.log('currIndex:', currIndex);
-
-                if (currIndex !== n) {
-                    this.list = this.swapItems(this.list, currIndex, n);
-                }
-
+                this.dragTop = y2;
+                this.toIndex = toIndex;
             },
-            moveend: function (item, e) {
+            moveend: function (e) {
                 if (!this.isEditing) return;
-                if (!this.isMoving) return;
 
+                var item = this.list[this.startIndex];
+                this.list.splice(this.startIndex, 1);
+                this.list.splice(this.toIndex, 0, item);
 
-                this.isMoving = false;
-                this.dragItem = null;
-                return;
-
-                console.log('moveend', item, e);
-                if (y2 !== 0) {
-                    console.log('y2:', y2);
-                    var arr = this.data.list.slice(0);
-                    var len = arr.length;
-                    n = 1;
-                    for (var k = 2; k < len; k++) {
-                        if (y2 > (60 * (k - 1) + k * 2 - 30)) {
-                            n = k;
-                        }
-                    }
-                    console.log('n:', n);
-
-                    if (y2 > (52 * (len - 1) + len * 2 - 26)) {
-                        n = len;
-                    }
-
-                    var cur = arr[currindex];
-
-                    arr.splice(currindex, 1);
-                    arr.splice((n - 1), 0, cur);
-                    arr1 = [];
-                    for (var m = 0; m < arr.length; m++) {
-                        arr[m].sort = m;
-                    }
-
-                    console.log(arr);
-
-                    this.mainx = '';
-                    this.list = arr;
-                    this.opacity = 1;
-                }
-
+                this.startIndex = -1;
+                this.toIndex = -1;
+                this.dragTop = -1;
+            },
+            selectIcon(index, e) {
+                this.editIndex = index;
+                wx.navigateTo({
+                    url: 'select-icon'
+                });
+            },
+            selectIcon_callback(icon) {
+                console.log(this.iconUrl + icon);
+                this.list[this.editIndex].icon = icon;
             }
         };
 
-        swapItems(arr, index1, index2) {
-            arr[index1] = arr.splice(index2, 1, arr[index1])[0];
-            return arr;
-        }
-
         async onLoad() {
             utils.showLoading();
-            const result = await
-                categoryApi.list();
+            const result = await categoryApi.list();
             utils.hideLoading();
 
             this.list = result.data;
+            this.iconUrl = result.iconUrl;
             this.$apply();
         }
     }
@@ -223,9 +213,10 @@
 
     .page-footer {
         display: flex;
-        background-color: #999999;
+        background-color: @weuiBgColorActive;
         justify-content: space-between;
         height: ~'90rpx';
+        border-top: ~'1rpx' solid @weuiLineColorLight;
 
         .footer-wrap {
             display: flex;
@@ -236,7 +227,7 @@
                 justify-content: center;
                 align-items: center;
                 width: 50%;
-                background-color: #EF4F4F;
+                border-right: ~'1rpx' solid @weuiLineColorLight;
             }
 
             .fright {
@@ -244,7 +235,6 @@
                 justify-content: center;
                 align-items: center;
                 width: 50%;
-                background-color: #0BB20C;
             }
         }
     }
@@ -253,13 +243,7 @@
         display: flex;
         height: ~'120rpx';
 
-        .category-item-drag {
-            display: flex;
-            height: ~'120rpx';
-            flex: 1;
-        }
-
-        .category-item-inner {
+        .bottom-border {
             display: flex;
             flex-grow: 1;
             box-sizing: border-box;
@@ -304,25 +288,31 @@
                 font-size: @weuiFontSize;
                 color: @weuiTextColorTitle;
                 box-sizing: border-box;
+                margin-top: -1px;
             }
 
             input {
                 width: 100%;
                 height: 100%;
                 font-size: @weuiFontSize;
+                border: 0;
+                padding: 0;
+                margin: 0;
                 box-sizing: border-box;
             }
 
         }
         .item-count {
             display: flex;
+            justify-content: center;
             align-items: center;
             width: ~'60rpx';
+            margin-right: ~'15rpx';
 
             .count {
                 display: flex;
                 align-items: center;
-                font-size: @weuiFontSizeSm;
+                font-size: @weuiFontSize;
                 color: @weuiTextColorWarn;
             }
         }
@@ -331,6 +321,10 @@
             display: flex;
             align-items: center;
             width: ~'60rpx';
+
+            icon {
+                font-size: @weuiFontSizeXL;
+            }
         }
     }
 
@@ -338,10 +332,9 @@
         display: flex;
         height: ~'120rpx';
         position: absolute;
-        background-color: #0ff;
         width: 100%;
         z-index: 10;
-        opacity: 0.5;
+        opacity: 0.6;
         box-shadow: 0px 0px 20px #333333;
 
     }

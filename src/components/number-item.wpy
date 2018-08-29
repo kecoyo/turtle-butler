@@ -20,12 +20,11 @@
     /**
      * 作品条目
      */
-    export default class TextItem extends wepy.component {
+    export default class NumberItem extends wepy.component {
 
         props = {
             item: {type: Object, default: {}},
             isEditing: {type: Boolean, default: false},
-            index: {type: Number, default: 0},
         };
 
         methods = {
@@ -39,15 +38,6 @@
             },
             bindinput(e) {
                 this.item.value = e.detail.value;
-            },
-            movestart(index, e) {
-                this.$emit('movestart', e, index);
-            },
-            move(e) {
-                this.$emit('move', e);
-            },
-            moveend(e) {
-                this.$emit('moveend', e);
             }
         }
     }

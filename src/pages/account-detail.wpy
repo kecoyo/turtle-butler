@@ -1,27 +1,96 @@
 <template>
     <view class="page">
-        <view class="page__bd">
+        <view class="page-body" @tap="bindBodyTap">
             <view class="space"></view>
-            <view class="title-item">
-                <view class="item-left">
-                    <view class="picture">
-                        <image src="{{account.icon}}"></image>
+
+            <view class="account-title">
+                <view class="title-icon">
+                    <view class="icon">
+                        <image wx:if="{{iconUrl}}" src="{{iconUrl + account.icon}}" @tap="bindSelectIconTap"/>
                     </view>
                 </view>
-                <view class="item-center">
-                    <view class="title">{{account.title}}</view>
-                    <view class="subtitle">{{account.subtitle}}</view>
-                </view>
-                <view class="item-right">
+                <view class="title-name">
+                    <view class="title">
+                        <input wx:if="{{isEditing}}" value="{{account.title}}" @input="bindTitleInput"/>
+                        <text wx:else>{{account.title}}</text>
+                    </view>
                 </view>
             </view>
+
             <view class="space"></view>
-            <repeat for="{{account.propertys}}" key="id">
-                <text-item wx:if="{{item.type==1}}" :item="item"/>
-                <password-item wx:if="{{item.type==2}}" :item="item"/>
-            </repeat>
+
+            <view class="property-list">
+                <repeat for="{{account.propertys}}" index="index" item="item">
+                    <view wx:if="{{toIndex == index && startIndex >= index}}" class="property-item">
+                        <view class="property-item-inner"></view>
+                    </view>
+                    <view class="property-item {{startIndex == index ? 'mainmove':'mainend'}}"
+                          style="{{startIndex == index ? ('top:'+ dragTop +'px') : ''}}"
+                          animation="{{(isEditing && removeIndex == index)?deleteAnimation:''}}"
+                    >
+                        <view class="property-item-inner"
+                              animation="{{removeIndex == index?removeAnimation:removeAnimation2}}">
+                            <view wx:if="{{isEditing}}" class="item-remove" catchtap="bindRemoveTap({{index}})">
+                                <icon class="iconfont icon-remove"></icon>
+                            </view>
+                            <view class="item-name">
+                                <text>{{item.name}}</text>
+                            </view>
+                            <view class="item-value">
+                                <input wx:if="{{isEditing}}" value="{{item.value}}"
+                                       bindinput="bindValueInput({{index}})"/>
+                                <text wx:else bindlongtap="copyToClipboard({{item}})">{{item.value}}</text>
+                            </view>
+                            <view wx:if="{{isEditing}}" class="item-drag"
+                                  catchtouchstart="bindDragStart({{index}})"
+                                  catchtouchmove="bindDragMove({{index}})"
+                                  catchtouchend="bindDragEnd">
+                                <icon class="iconfont icon-tuodong"></icon>
+                            </view>
+                        </view>
+                        <view class="item-delete"
+                              animation="{{removeIndex == index?removeAnimation:removeAnimation2}}"
+                              catchtap="bindDeleteTap({{item}},{{index}})">
+                            删除
+                        </view>
+                    </view>
+                    <view wx:if="{{toIndex == index && startIndex < index}}" class="property-item">
+                        <view class="property-item-inner"></view>
+                    </view>
+                </repeat>
+            </view>
+
             <view class="space"></view>
+
+            <view wx:if="{{isEditing}}" class="weui-cells weui-cells_after-title">
+                <view class="weui-cell weui-cell_link" bindtap="bindAddPropertyTap">
+                    <view class="weui-cell__bd">添加分隔线</view>
+                </view>
+                <view class="weui-cell weui-cell_link" bindtap="bindAddPropertyTap">
+                    <view class="weui-cell__bd">添加属性</view>
+                </view>
+            </view>
+
         </view>
+
+        <view class="op-footer">
+            <block wx:if="{{!isEditing}}">
+                <view class="op-left">
+                </view>
+                <view class="op-right">
+                    <view class="op" bindtap="startEdit()">编辑</view>
+                </view>
+            </block>
+            <block wx:else>
+                <view class="op-left">
+                    <view class="op" bindtap="cancelEdit()">取消</view>
+                </view>
+                <view class="op-right">
+                    <view class="op" bindtap="doneEdit()">完成</view>
+                </view>
+            </block>
+        </view>
+
     </view>
 </template>
 
@@ -29,9 +98,14 @@
     import wepy from 'wepy';
     import accountApi from '../apis/accountApi';
     import utils from '../lib/utils';
-    import env from '../lib/env';
     import TextItem from '../components/text-item';
+    import NumberItem from '../components/number-item';
     import PasswordItem from '../components/password-item';
+
+    let y, y1, y2;
+
+    // 列表元素高度
+    let itemHeight = utils.rem2px(90);
 
     export default class AccountDetail extends wepy.page {
 
@@ -41,18 +115,209 @@
 
         components = {
             'text-item': TextItem,
+            'number-item': NumberItem,
             'password-item': PasswordItem
         };
 
         data = {
-            account: [],
-            imgUrl: env.imgUrl
+            account: {},
+            iconUrl: '',
+            delPropIds: [],            // 删除的属性ID
+
+            isEditing: false,
+
+            startIndex: -1, // 原始位置
+            toIndex: -1, // 目标位置
+            dragTop: -1, // 拖动元素的top
+
+            removeIndex: -1,
+            deleteIndex: -1,
+
+            removeAnimation: '',
+            removeAnimation2: '',
+
+            deleteAnimation: ''
         };
 
-        methods = {};
+        methods = {
+            startEdit() {
+                this.isEditing = true;
+            },
+            async doneEdit() {
+                utils.showLoading();
+
+                let account = this.account;
+                let delPropIds = this.delPropIds;
+
+                account.propertys.forEach((item, i) => {
+                    item.account_id = account.id;
+                    item.sort = i;
+                });
+
+                console.log(account);
+
+                try {
+                    let result = await accountApi.save({account, delPropIds});
+                    console.log(result);
+                    this.isEditing = false;
+                    utils.hideLoading();
+                    utils.showToast('保存成功', 'success');
+                    this.$apply();
+                } catch (err) {
+                    utils.showToast('保存失败');
+                }
+
+            },
+            cancelEdit() {
+                this.isEditing = false;
+            },
+            bindSelectIconTap() {
+                if (this.isEditing) {
+                    wx.navigateTo({
+                        url: 'select-icon'
+                    });
+                }
+            },
+            selectIcon_callback(icon) {
+                this.account.icon = icon;
+            },
+            bindTitleInput(e) {
+                this.account.title = e.detail.value;
+            },
+            bindAddPropertyTap() {
+                wx.navigateTo({
+                    url: 'add-property'
+                });
+            },
+            bindValueInput(index, e) {
+                this.account.propertys[index].value = e.detail.value;
+            },
+            bindDragStart(index, e) {
+                if (!this.isEditing) return;
+
+                y = e.touches[0].clientY;
+                y1 = e.currentTarget.offsetTop;
+                y2 = e.touches[0].clientY - y + y1 + (index * itemHeight);
+
+                console.log(y, y1, y2);
+
+                console.log(e);
+
+                this.startIndex = index;
+                this.toIndex = index;
+                this.dragTop = y2;
+            },
+            bindDragMove(index, e) {
+                if (!this.isEditing) return;
+
+                y2 = e.touches[0].clientY - y + y1 + (index * itemHeight);
+
+                console.log(e, e.touches[0].clientY, y, y1, y2);
+
+                var propertys = this.account.propertys;
+                var toIndex = 0;
+                for (var i = 1; i < propertys.length; i++) {
+                    if (y2 > (itemHeight * (i - 1) + itemHeight / 2)) {
+                        toIndex = i;
+                    }
+                }
+
+                this.dragTop = y2;
+                this.toIndex = toIndex;
+            },
+            bindDragEnd(e) {
+                if (!this.isEditing) return;
+
+                let propertys = this.account.propertys;
+
+                var item = propertys[this.startIndex];
+                propertys.splice(this.startIndex, 1);
+                propertys.splice(this.toIndex, 0, item);
+
+                this.startIndex = -1;
+                this.toIndex = -1;
+                this.dragTop = -1;
+            },
+            bindRemoveTap(index) {
+                this.removeIndex = index;
+
+                // 创建动画
+                var removeAnimation = wx.createAnimation({
+                    duration: 400,
+                    timingFunction: 'ease',
+                    delay: 0,
+                    transformOrigin: '%50 %50 0',
+                });
+
+                let px = utils.rem2px(120);
+
+                // 设置动画
+                removeAnimation.translate('-' + px + 'px', 0).step();        // 偏移x,y,z
+
+                // 导出动画数据传递给组件的animation属性。
+                this.removeAnimation = removeAnimation.export();
+
+                // 创建动画
+                var removeAnimation2 = wx.createAnimation({
+                    duration: 400,
+                    timingFunction: 'ease',
+                    delay: 0,
+                    transformOrigin: '%50 %50 0',
+                });
+
+                // 设置动画
+                removeAnimation2.translate(0, 0).step();        // 偏移x,y,z
+
+                // 导出动画数据传递给组件的animation属性。
+                this.removeAnimation2 = removeAnimation2.export();
+            },
+            bindDeleteTap(item, index) {
+                // 创建动画
+                var removeAnimation2 = wx.createAnimation({
+                    duration: 0,
+                    timingFunction: 'ease',
+                    delay: 0,
+                    transformOrigin: '%50 %50 0',
+                });
+
+                // 设置动画
+                removeAnimation2.translate(0, 0).step();        // 偏移x,y,z
+
+                this.removeAnimation2 = removeAnimation2;
+                this.removeIndex = -1;
+                this.account.propertys.splice(index, 1);
+                if (item.id) {
+                    this.delPropIds.push(item);
+                }
+            },
+
+            bindBodyTap() {
+                if (this.removeIndex !== -1) {
+                    this.removeIndex = -1;
+                }
+            },
+            copyToClipboard(item) {
+                wx.setClipboardData({
+                    data: item.value,
+                    success: (res) => {
+                        utils.showToast('复制成功');
+                    }
+                });
+            }
+        };
+
+        translate() {
+
+        }
+
+        addPropertyCallback(property) {
+            property.account_id = this.account.id;
+            this.account.propertys.push(property);
+            this.$apply();
+        }
 
         async onLoad(options) {
-            this.id = options.id || 1;
+            this.id = options.id || 3686;
 
             utils.showLoading();
             let result = await accountApi.detail({
@@ -61,8 +326,10 @@
             utils.hideLoading();
 
             this.account = result.data;
+            this.iconUrl = result.iconUrl;
             this.$apply();
         }
+
     }
 </script>
 
@@ -73,23 +340,27 @@
         background-color: @weuiBgColorDefault;
     }
 
+    .page-body {
+
+    }
+
     .space {
         height: ~'20rpx';
     }
 
-    .title-item {
-        background-color: #F8F8F8;
+    .account-title {
+        background-color: #FFFFFF;
         display: flex;
         flex: 1;
         padding: ~'20rpx' 0 ~'20rpx' ~'20rpx';
 
-        .item-left {
+        .title-icon {
             display: flex;
             flex-direction: column;
             justify-content: center;
             padding: 0 ~'15rpx';
 
-            .picture {
+            .icon {
                 width: ~'90rpx';
                 height: ~'90rpx';
                 background-color: @weuiBgColorDefault;
@@ -106,7 +377,7 @@
 
         }
 
-        .item-center {
+        .title-name {
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -120,46 +391,48 @@
                 color: @weuiTextColorTitle;
                 font-weight: bold;
                 padding: ~'5rpx';
-            }
 
-            .subtitle {
-                display: flex;
-                align-items: center;
-                font-size: ~'26rpx';
-                height: ~'45rpx';
-                color: @weuiTextColorTitle;
-                padding: ~'5rpx';
-            }
-        }
+                input {
+                    width: 100%;
+                }
 
-        .item-right {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding-right: ~'25rpx';
-
-            icon {
-                color: @weuiTextColorGray;
             }
         }
     }
 
+    .property-list {
+        position: relative;
+    }
+
     .property-item {
-        padding-left: 20px;
-        background-color: #F8F8F8;
+        display: flex;
+        background-color: #FFFFFF;
+        border-bottom: 1px solid @weuiLineColorLight;
+        overflow: hidden;
 
         .property-item-inner {
             display: flex;
-            flex: 1;
+            width: ~'750rpx';
             height: ~'90rpx';
-            border-bottom: 1px solid @weuiLineColorLight;
+            flex-shrink: 0;
         }
 
-        .item-left {
+        .item-remove {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            color: @weuiColorWarn;
+            padding-left: ~'30rpx';
+            flex-shrink: 0;
+
+        }
+
+        .item-name {
             display: flex;
             justify-content: flex-start;
             align-items: center;
-            width: ~'180rpx';
+            width: ~'200rpx';
+            padding-left: ~'30rpx';
 
             text {
                 font-size: @weuiFontSize;
@@ -168,7 +441,7 @@
 
         }
 
-        .item-center {
+        .item-value {
             display: flex;
             justify-content: flex-start;
             align-items: center;
@@ -180,18 +453,40 @@
             }
         }
 
-        .item-right {
+        .item-drag {
             display: flex;
+            justify-content: flex-start;
             align-items: center;
-            width: ~'60rpx';
+            flex-shrink: 0;
+            padding-right: ~'30rpx';
 
             icon {
                 color: @weuiTextColorGray;
             }
         }
+
+        .item-delete {
+            background-color: @weuiColorWarn;
+            color: @weuiTextColorWhite;
+            width: ~'120rpx';
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
     }
 
-    .btn-wrap {
-        padding: 15px;
+    .mainmove {
+        position: absolute;
+        width: ~'750rpx';
+        z-index: 10;
+        opacity: 0.6;
+        box-shadow: 0px 0px 20px #333333;
+
+    }
+
+    .mainend {
+        position: relative;
+        opacity: 1;
     }
 </style>

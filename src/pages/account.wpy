@@ -7,7 +7,7 @@
                         <view class="account-item-inner">
                             <view class="item-left">
                                 <view class="icon">
-                                    <image src='{{item.icon}}'></image>
+                                    <image src='{{iconUrl + item.icon}}'></image>
                                 </view>
                             </view>
                             <view class="item-center">
@@ -33,10 +33,7 @@
     import wepy from 'wepy';
     import accountApi from '../apis/accountApi';
     import utils from '../lib/utils';
-    import env from "../lib/env";
-
-    const icons = ['人字拖.png', '位置.png', '冰淇淋.png', '吊床.png', '地图.png', '地球仪.png', '墨镜.png', '巡航.png',
-        '帆船.png', '帕梅拉.png', '总线.png'];
+    import env from '../lib/env';
 
     export default class Account extends wepy.page {
 
@@ -46,28 +43,27 @@
 
         data = {
             list: [],
-            imgUrl: env.imgUrl,
-            icons
+            iconUrl: ''
         };
 
         methods = {};
 
         async onLoad(options) {
-            this.categoryId = options.id;
-            this.categoryName = options.name;
+            const {categoryId, categoryName} = options;
 
             // 修改标题
             wx.setNavigationBarTitle({
-                title: this.categoryName
-            })
+                title: categoryName
+            });
 
             utils.showLoading();
             let result = await accountApi.list({
-                categoryId: options.id
+                categoryId
             });
             utils.hideLoading();
 
             this.list = result.data;
+            this.iconUrl = result.iconUrl;
             this.$apply();
         }
     }
