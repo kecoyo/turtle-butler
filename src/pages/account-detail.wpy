@@ -1,17 +1,17 @@
 <template>
-    <view class="page">
-        <view class="page-body" @tap="bindBodyTap">
+    <view class="page" @tap="pageTap">
+        <view class="page-body">
             <view class="space"></view>
 
             <view class="account-title">
                 <view class="title-icon">
                     <view class="icon">
-                        <image wx:if="{{iconUrl}}" src="{{iconUrl + account.icon}}" @tap="bindSelectIconTap"/>
+                        <image wx:if="{{iconUrl}}" src="{{iconUrl + account.icon}}" @tap="selectIcon"/>
                     </view>
                 </view>
                 <view class="title-name">
                     <view class="title">
-                        <input wx:if="{{isEditing}}" value="{{account.title}}" @input="bindTitleInput"/>
+                        <input wx:if="{{isEditing}}" value="{{account.title}}" @input="titleInput"/>
                         <text wx:else>{{account.title}}</text>
                     </view>
                 </view>
@@ -30,7 +30,9 @@
                     >
                         <view class="property-item-inner"
                               animation="{{removeIndex == index?removeAnimation:removeAnimation2}}">
-                            <view wx:if="{{isEditing}}" class="item-remove" catchtap="bindRemoveTap({{index}})">
+                            <view class="item-remove" catchtap="removeProperty({{index}})"
+                                  animation="{{isEditing?removeBtnInAni:removeBtnOutAni}}"
+                            >
                                 <icon class="iconfont icon-remove"></icon>
                             </view>
                             <view class="item-name">
@@ -41,16 +43,17 @@
                                        bindinput="bindValueInput({{index}})"/>
                                 <text wx:else bindlongtap="copyToClipboard({{item}})">{{item.value}}</text>
                             </view>
-                            <view wx:if="{{isEditing}}" class="item-drag"
-                                  catchtouchstart="bindDragStart({{index}})"
-                                  catchtouchmove="bindDragMove({{index}})"
-                                  catchtouchend="bindDragEnd">
+                            <view class="item-drag"
+                                  animation="{{isEditing?removeBtnInAni:removeBtnOutAni}}"
+                                  catchtouchstart="dragStart({{index}})"
+                                  catchtouchmove="dragMove({{index}})"
+                                  catchtouchend="dragEnd">
                                 <icon class="iconfont icon-tuodong"></icon>
                             </view>
                         </view>
                         <view class="item-delete"
                               animation="{{removeIndex == index?removeAnimation:removeAnimation2}}"
-                              catchtap="bindDeleteTap({{item}},{{index}})">
+                              catchtap="deleteProperty({{item}},{{index}})">
                             删除
                         </view>
                     </view>
@@ -63,10 +66,7 @@
             <view class="space"></view>
 
             <view wx:if="{{isEditing}}" class="weui-cells weui-cells_after-title">
-                <view class="weui-cell weui-cell_link" bindtap="bindAddPropertyTap">
-                    <view class="weui-cell__bd">添加分隔线</view>
-                </view>
-                <view class="weui-cell weui-cell_link" bindtap="bindAddPropertyTap">
+                <view class="weui-cell weui-cell_link" bindtap="addProperty">
                     <view class="weui-cell__bd">添加属性</view>
                 </view>
             </view>
@@ -125,6 +125,7 @@
             delPropIds: [],            // 删除的属性ID
 
             isEditing: false,
+            hasChanged: false,
 
             startIndex: -1, // 原始位置
             toIndex: -1, // 目标位置
@@ -136,42 +137,67 @@
             removeAnimation: '',
             removeAnimation2: '',
 
-            deleteAnimation: ''
+            deleteAnimation: '',
+
+            removeBtnInAni: '',
+            removeBtnOutAni: '',
         };
 
         methods = {
             startEdit() {
+                // 创建动画
+                var removeBtnInAni = wx.createAnimation({
+                    duration: 400,
+                    timingFunction: 'ease',
+                    delay: 0
+                });
+                removeBtnInAni.width('60rpx').step();
+                this.removeBtnInAni = removeBtnInAni.export();
+                var removeBtnOutAni = wx.createAnimation({
+                    duration: 400,
+                    timingFunction: 'ease',
+                    delay: 0
+                });
+                removeBtnOutAni.width('0rpx').step();
+                this.removeBtnOutAni = removeBtnOutAni.export();
+
                 this.isEditing = true;
             },
-            async doneEdit() {
-                utils.showLoading();
+            doneEdit() {
 
-                let account = this.account;
-                let delPropIds = this.delPropIds;
+                if (this.hasChanged) {
+                    let account = this.account;
+                    let delPropIds = this.delPropIds;
 
-                account.propertys.forEach((item, i) => {
-                    item.account_id = account.id;
-                    item.sort = i;
-                });
+                    account.propertys.forEach((item, i) => {
+                        item.account_id = account.id;
+                        item.sort = i;
+                    });
 
-                console.log(account);
-
-                try {
-                    let result = await accountApi.save({account, delPropIds});
-                    console.log(result);
+                    utils.showLoading();
+                    accountApi.save({account, delPropIds})
+                        .then(res => {
+                            utils.hideLoading();
+                            if (utils.isSuccess(res)) {
+                                utils.showToast('保存成功', 'success');
+                                this.isEditing = false;
+                                this.hasChanged = false;
+                                this.$apply();
+                            } else {
+                                utils.showToast('保存失败');
+                            }
+                        });
+                } else {
                     this.isEditing = false;
-                    utils.hideLoading();
-                    utils.showToast('保存成功', 'success');
-                    this.$apply();
-                } catch (err) {
-                    utils.showToast('保存失败');
+                    this.hasChanged = false;
                 }
 
             },
             cancelEdit() {
                 this.isEditing = false;
+                this.hasChanged = false;
             },
-            bindSelectIconTap() {
+            selectIcon() {
                 if (this.isEditing) {
                     wx.navigateTo({
                         url: 'select-icon'
@@ -180,19 +206,22 @@
             },
             selectIcon_callback(icon) {
                 this.account.icon = icon;
+                this.hasChanged = true;
             },
-            bindTitleInput(e) {
+            titleInput(e) {
                 this.account.title = e.detail.value;
+                this.hasChanged = true;
             },
-            bindAddPropertyTap() {
+            addProperty() {
                 wx.navigateTo({
                     url: 'add-property'
                 });
             },
             bindValueInput(index, e) {
                 this.account.propertys[index].value = e.detail.value;
+                this.hasChanged = true;
             },
-            bindDragStart(index, e) {
+            dragStart(index, e) {
                 if (!this.isEditing) return;
 
                 y = e.touches[0].clientY;
@@ -207,7 +236,7 @@
                 this.toIndex = index;
                 this.dragTop = y2;
             },
-            bindDragMove(index, e) {
+            dragMove(index, e) {
                 if (!this.isEditing) return;
 
                 y2 = e.touches[0].clientY - y + y1 + (index * itemHeight);
@@ -225,7 +254,7 @@
                 this.dragTop = y2;
                 this.toIndex = toIndex;
             },
-            bindDragEnd(e) {
+            dragEnd(e) {
                 if (!this.isEditing) return;
 
                 let propertys = this.account.propertys;
@@ -237,8 +266,9 @@
                 this.startIndex = -1;
                 this.toIndex = -1;
                 this.dragTop = -1;
+                this.hasChanged = true;
             },
-            bindRemoveTap(index) {
+            removeProperty(index) {
                 this.removeIndex = index;
 
                 // 创建动画
@@ -271,7 +301,7 @@
                 // 导出动画数据传递给组件的animation属性。
                 this.removeAnimation2 = removeAnimation2.export();
             },
-            bindDeleteTap(item, index) {
+            deleteProperty(item, index) {
                 // 创建动画
                 var removeAnimation2 = wx.createAnimation({
                     duration: 0,
@@ -289,9 +319,10 @@
                 if (item.id) {
                     this.delPropIds.push(item);
                 }
+                this.hasChanged = true;
             },
 
-            bindBodyTap() {
+            pageTap() {
                 if (this.removeIndex !== -1) {
                     this.removeIndex = -1;
                 }
@@ -335,14 +366,6 @@
 
 <style type="less">
     @import '../style/weui.less';
-
-    page {
-        background-color: @weuiBgColorDefault;
-    }
-
-    .page-body {
-
-    }
 
     .space {
         height: ~'20rpx';
@@ -422,8 +445,8 @@
             justify-content: flex-end;
             align-items: center;
             color: @weuiColorWarn;
-            padding-left: ~'30rpx';
             flex-shrink: 0;
+            width: ~'0rpx';
 
         }
 
@@ -458,7 +481,7 @@
             justify-content: flex-start;
             align-items: center;
             flex-shrink: 0;
-            padding-right: ~'30rpx';
+            width: ~'0rpx';
 
             icon {
                 color: @weuiTextColorGray;
@@ -489,4 +512,5 @@
         position: relative;
         opacity: 1;
     }
+
 </style>

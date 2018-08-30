@@ -1,4 +1,7 @@
 const utils = {
+    isSuccess(result) {
+        return result && result.code && result.code == '1';
+    },
     showLoading() {
         wx.showLoading({
             title: '数据加载中',
@@ -39,6 +42,12 @@ const utils = {
             return pages[pages.length - 2];
         }
         return null;
+    },
+    // 页面跳转
+    navigateTo(url) {
+        wx.navigateTo({
+            url
+        });
     }
 };
 

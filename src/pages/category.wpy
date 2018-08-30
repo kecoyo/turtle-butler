@@ -2,67 +2,51 @@
     <view class="page">
         <view class="page-body">
             <repeat for="{{list}}" key="index" index="index" item="item">
-                <view wx:if="{{isEditing}}">
-                    <div wx:if="{{toIndex == index && startIndex >= index}}" class="category-item">
-                        <view class="bottom-border"></view>
-                    </div>
-                    <view class="category-item {{startIndex == index ? 'mainmove':'mainend'}}"
-                          style="{{'left:0; top:'+ dragTop +'px'}}">
-                        <view class="bottom-border">
-                            <view class="item-icon">
-                                <view class="icon" bindtap="selectIcon({{index}})">
-                                    <image src="{{iconUrl + item.icon}}"></image>
-                                </view>
-                            </view>
-                            <view class="item-title">
-                                <input value="{{item.name}}" bindinput="input({{index}})"/>
-                            </view>
-                            <view class="item-drag" catchtouchstart="movestart({{index}})" catchtouchmove="move"
-                                  catchtouchend="moveend">
-                                <icon class="iconfont icon-tuodong"></icon>
-                            </view>
+
+                <div wx:if="{{toIndex == index && startIndex >= index}}" class="category-item"/>
+                <view class="category-item {{startIndex == index ? 'mainmove':'mainend'}}" bindtap="itemTap({{item}})"
+                      style="{{'left:0; top:'+ dragTop +'px'}}">
+                    <view class="item-icon">
+                        <view class="icon" bindtap="selectIcon({{index}})">
+                            <image src="{{iconUrl + item.icon}}"></image>
                         </view>
                     </view>
-                    <div wx:if="{{toIndex == index && startIndex < index}}" class="category-item">
-                        <view class="bottom-border"></view>
-                    </div>
+                    <view class="item-title">
+                        <input wx:if="{{isEditing}}" value="{{item.name}}" bindinput="nameInput({{index}})"/>
+                        <text wx:else>{{item.name}}</text>
+                    </view>
+                    <view class="item-count" animation="{{isEditing?itemCountOutAni:itemCountInAni}}">
+                        <text class="count">{{item.count}}</text>
+                    </view>
+                    <view class="item-drag" animation="{{isEditing?itemDragInAni:itemDragOutAni}}"
+                          catchtouchstart="moveStart({{index}})" catchtouchmove="move" catchtouchend="moveEnd">
+                        <icon class="iconfont icon-tuodong"></icon>
+                    </view>
                 </view>
-                <navigator wx:else url="./account?categoryId={{item.id}}&categoryName={{item.name}}">
-                    <view class="category-item">
-                        <view class="bottom-border">
-                            <view class="item-icon">
-                                <view class="icon">
-                                    <image src="{{iconUrl + item.icon}}"></image>
-                                </view>
-                            </view>
-                            <view class="item-title">
-                                <text>{{item.name}}</text>
-                            </view>
-                            <view class="item-count">
-                                <text class="count">{{item.count}}</text>
-                            </view>
-                        </view>
-                    </view>
-                </navigator>
+                <div wx:if="{{toIndex == index && startIndex < index}}" class="category-item"/>
+
             </repeat>
         </view>
 
-        <view class="op-footer">
-            <block wx:if="{{!isEditing}}">
-                <view class="op-left">
-                </view>
-                <view class="op-right">
-                    <view class="op" bindtap="startEdit()">编辑</view>
-                </view>
-            </block>
-            <block wx:else>
-                <view class="op-left">
-                    <view class="op" bindtap="cancelEdit()">取消</view>
-                </view>
-                <view class="op-right">
-                    <view class="op" bindtap="doneEdit()">完成</view>
-                </view>
-            </block>
+        <view class="page-footer">
+            <view class="page-footer-inner">
+                <block wx:if="{{!isEditing}}">
+                    <view class="footer-left">
+                        <view class="button" bindtap="startEdit()">新建分组</view>
+                    </view>
+                    <view class="footer-right">
+                        <view class="button" bindtap="startEdit()">编辑</view>
+                    </view>
+                </block>
+                <block wx:else>
+                    <view class="footer-left">
+                        <view class="button" bindtap="cancelEdit()">取消</view>
+                    </view>
+                    <view class="footer-right">
+                        <view class="button" bindtap="doneEdit()">完成</view>
+                    </view>
+                </block>
+            </view>
         </view>
 
     </view>
@@ -88,11 +72,18 @@
             list: [],
             iconUrl: '',
 
-            isEditing: false,
+            isEditing: false,   // 编辑状态
+            hasChanged: false,  // 有改变
 
             startIndex: -1, // 原始位置
             toIndex: -1, // 目标位置
             dragTop: -1, // 拖动元素的top
+
+            // 动画
+            itemDragInAni: '',
+            itemDragOutAni: '',
+            itemCountInAni: '',
+            itemCountOutAni: '',
         };
 
         methods = {
@@ -101,42 +92,44 @@
                 this.listCopy = this.list.slice(0);
             },
             doneEdit() {
+                if (this.hasChanged) {
+                    let data = this.list.map((item, i) => ({
+                        id: item.id,
+                        name: item.name,
+                        icon: item.icon
+                    }));
 
-                let data = this.list.map((item, i) => ({
-                    id: item.id,
-                    name: item.name,
-                    icon: item.icon
-                }));
-
-                utils.showLoading();
-                categoryApi.saveAll(data)
-                    .then(result => {
+                    utils.showLoading();
+                    categoryApi.saveAll(data).then(result => {
                         utils.hideLoading();
-                        utils.showToast('保存成功', 'success');
-                    })
-                    .catch(() => {
-                        utils.showToast('保存失败');
+                        if (utils.isSuccess(result)) {
+                            utils.showToast('保存成功', 'success');
+                            this.isEditing = false;
+                            this.hasChanged = false;
+                            this.$apply();
+                        } else {
+                            utils.showToast('保存失败');
+                        }
                     });
-
-                this.isEditing = false;
-
-            },
-            cancelEdit() {
-                this.isEditing = false;
-                this.list = this.listCopy;
-            },
-            input(index, e) {
-                console.log(index, e);
-                this.list[index].name = e.detail.value;
-            },
-            itemTap(item) {
-                if (!this.isEditing) {
-                    wx.navigateTo({
-                        url: `./account?id=${item.id}&name=${item.name}`,
-                    });
+                } else {
+                    this.isEditing = false;
+                    this.hasChanged = false;
                 }
             },
-            movestart: function (index, e) {
+            cancelEdit() {
+                this.list = this.listCopy;
+                this.isEditing = false;
+                this.hasChanged = false;
+            },
+            itemTap(item) {
+                if (this.isEditing) return;
+                utils.navigateTo(`account?categoryId=${item.id}&categoryName=${item.name}`);
+            },
+            nameInput(index, e) {
+                this.list[index].name = e.detail.value;
+                this.hasChanged = true;
+            },
+            moveStart: function (index, e) {
                 if (!this.isEditing) return;
 
                 y = e.touches[0].clientY;
@@ -163,26 +156,30 @@
                 this.dragTop = y2;
                 this.toIndex = toIndex;
             },
-            moveend: function (e) {
+            moveEnd: function (e) {
                 if (!this.isEditing) return;
 
-                var item = this.list[this.startIndex];
+                let item = this.list[this.startIndex];
                 this.list.splice(this.startIndex, 1);
                 this.list.splice(this.toIndex, 0, item);
 
                 this.startIndex = -1;
                 this.toIndex = -1;
                 this.dragTop = -1;
+
+                this.hasChanged = true;
             },
             selectIcon(index, e) {
+                if (!this.isEditing) return;
+
                 this.editIndex = index;
                 wx.navigateTo({
                     url: 'select-icon'
                 });
             },
             selectIcon_callback(icon) {
-                console.log(this.iconUrl + icon);
                 this.list[this.editIndex].icon = icon;
+                this.hasChanged = true;
             }
         };
 
@@ -195,60 +192,41 @@
             this.iconUrl = result.iconUrl;
             this.$apply();
         }
+
+        onReady() {
+            // 创建动画
+            var itemDragInAni = wx.createAnimation({timingFunction: 'ease', delay: 400});
+            itemDragInAni.width('60rpx').step();
+            this.itemDragInAni = itemDragInAni.export();
+
+            var itemDragOutAni = wx.createAnimation({timingFunction: 'ease'});
+            itemDragOutAni.width('0rpx').step();
+            this.itemDragOutAni = itemDragOutAni.export();
+
+            var itemCountInAni = wx.createAnimation({timingFunction: 'ease', delay: 400});
+            itemCountInAni.width('60rpx').step();
+            this.itemCountInAni = itemCountInAni.export();
+
+            var itemCountOutAni = wx.createAnimation({timingFunction: 'ease'});
+            itemCountOutAni.width('0rpx').step();
+            this.itemCountOutAni = itemCountOutAni.export();
+        }
     }
 </script>
 
 <style type="less">
     @import '../style/weui.less';
 
-    .page {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-    }
-
-    .page-body {
-        flex: 1;
-    }
-
-    .page-footer {
-        display: flex;
-        background-color: @weuiBgColorActive;
-        justify-content: space-between;
-        height: ~'90rpx';
-        border-top: ~'1rpx' solid @weuiLineColorLight;
-
-        .footer-wrap {
-            display: flex;
-            justify-content: space-between;
-            flex-grow: 1;
-            .fleft {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                width: 50%;
-                border-right: ~'1rpx' solid @weuiLineColorLight;
-            }
-
-            .fright {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                width: 50%;
-            }
-        }
-    }
-
     .category-item {
+        @leftGap: ~'30rpx';
+        position: relative;
         display: flex;
         height: ~'120rpx';
+        padding-left: @leftGap;
 
-        .bottom-border {
-            display: flex;
-            flex-grow: 1;
-            box-sizing: border-box;
-            margin-left: ~'36rpx';
-            border-bottom: 1px solid @weuiLineColorLight;
+        &:before {
+            .setBottomLine(@weuiLineColorLight);
+            left: @leftGap;
         }
 
         .item-icon {
@@ -302,25 +280,31 @@
             }
 
         }
+
         .item-count {
             display: flex;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
+            flex-shrink: 0;
             width: ~'60rpx';
-            margin-right: ~'15rpx';
+            overflow: hidden;
 
             .count {
                 display: flex;
+                justify-content: center;
                 align-items: center;
                 font-size: @weuiFontSize;
                 color: @weuiTextColorWarn;
+                width: ~'30rpx';
             }
         }
 
         .item-drag {
             display: flex;
             align-items: center;
-            width: ~'60rpx';
+            flex-shrink: 0;
+            width: ~'0rpx';
+            overflow: hidden;
 
             icon {
                 font-size: @weuiFontSizeXL;
