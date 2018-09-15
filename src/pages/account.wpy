@@ -23,7 +23,7 @@
             </repeat>
 
             <view class="btn-wrap">
-                <button class="weui-btn" type="primary">添 加</button>
+                <button class="weui-btn" type="primary" @tap="addAccount">添 加</button>
             </view>
         </view>
     </view>
@@ -42,29 +42,48 @@
         };
 
         data = {
+            categoryId: '',
+            categoryName: '',
+
             list: [],
             iconUrl: ''
         };
 
-        methods = {};
+        methods = {
+            addAccount() {
+                utils.navigateTo('account-detail?isEditing=true');
+            }
+        };
 
-        async onLoad(options) {
-            const {categoryId, categoryName} = options;
 
-            // 修改标题
-            wx.setNavigationBarTitle({
-                title: categoryName
-            });
+        async onRefresh() {
 
             utils.showLoading();
             let result = await accountApi.list({
-                categoryId
+                categoryId: this.categoryId
             });
             utils.hideLoading();
 
             this.list = result.data;
             this.iconUrl = result.iconUrl;
             this.$apply();
+        }
+
+        onLoad(options) {
+            const {categoryId, categoryName} = options;
+
+            this.categoryId = categoryId || 1018;
+            this.categoryName = categoryName;
+
+            // 修改标题
+            wx.setNavigationBarTitle({
+                title: categoryName
+            });
+            this.onRefresh();
+        }
+
+        onShow() {
+            this.onRefresh();
         }
     }
 </script>

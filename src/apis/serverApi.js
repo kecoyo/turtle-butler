@@ -10,7 +10,7 @@ const serverApi = {
      * 图标列表
      * @returns {*}
      */
-    iconList: () => request.get(env.apiPath + '/icon/list'),
+    iconList: () => request.get(env.apiPath + 'icon/list'),
 
 };
 

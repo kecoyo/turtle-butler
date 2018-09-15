@@ -7,10 +7,11 @@
 
         config = {
             'pages': [
+                'pages/account',
                 'pages/category',
+                'pages/category-edit',
                 'pages/account-detail',
                 'pages/add-property',
-                'pages/account',
                 'pages/select-icon',
             ],
             'window': {
@@ -43,6 +44,8 @@
         font-family: -apple-system-font, Helvetica Neue, Helvetica, sans-serif;
         height: 100%;
         display: flex;
+        box-sizing: border-box;
+        overflow: hidden;
     }
 
     .page {
@@ -52,48 +55,42 @@
     }
 
     .page-body {
+        display:flex;
         flex: 1;
     }
 
     .page-footer {
         @height: ~'90rpx';
-        height: @height;
         flex-shrink: 0;
+        height: @height;
+        background-color: @weuiBgColorActive;
+        display: flex;
+        justify-content: space-between;
+        z-index: 100;
 
-        .page-footer-inner {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: @height;
-            background-color: @weuiBgColorActive;
+        .footer-left {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
+            align-items: center;
+            flex: 1;
+        }
 
-            .footer-left {
-                display: flex;
-                justify-content: flex-start;
-                align-items: center;
-                flex: 1;
-            }
+        .footer-center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+        }
 
-            .footer-center {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                flex: 1;
-            }
+        .footer-right {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            flex: 1;
+        }
 
-            .footer-right {
-                display: flex;
-                justify-content: flex-end;
-                align-items: center;
-                flex: 1;
-            }
-
-            .button {
-                padding: ~'30rpx';
-            }
+        .button {
+            padding: ~'30rpx';
         }
     }
 

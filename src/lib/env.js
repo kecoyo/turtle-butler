@@ -1,16 +1,21 @@
 /**
  * 开发环境
  */
+const devServer = 'http://localhost:8701/';
 const development = {
-    apiPath: 'http://localhost:8701/api',
-    // apiPath: 'http://192.168.11.207:3000/api',
+    devServer,
+    apiPath: `${devServer}api/`,
+    iconUrl: `${devServer}icons/`
 };
 
 /**
  * 开发环境
  */
+const prodServer = 'http://butler.kecoyo.com/';
 const production = {
-    apiPath: 'http://butler.kecoyo.com/api',
+    devServer,
+    apiPath: `${prodServer}api/`,
+    iconUrl: `${prodServer}icons/`
 };
 
 export default production;

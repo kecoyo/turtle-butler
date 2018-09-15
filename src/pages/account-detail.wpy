@@ -73,22 +73,24 @@
 
         </view>
 
-        <view class="op-footer">
-            <block wx:if="{{!isEditing}}">
-                <view class="op-left">
-                </view>
-                <view class="op-right">
-                    <view class="op" bindtap="startEdit()">编辑</view>
-                </view>
-            </block>
-            <block wx:else>
-                <view class="op-left">
-                    <view class="op" bindtap="cancelEdit()">取消</view>
-                </view>
-                <view class="op-right">
-                    <view class="op" bindtap="doneEdit()">完成</view>
-                </view>
-            </block>
+        <view class="page-footer">
+            <view class="page-footer-inner">
+                <block wx:if="{{!isEditing}}">
+                    <view class="footer-left">
+                    </view>
+                    <view class="footer-right">
+                        <view class="button" bindtap="startEdit()">编辑</view>
+                    </view>
+                </block>
+                <block wx:else>
+                    <view class="footer-left">
+                        <view class="button" bindtap="cancelEdit()">取消</view>
+                    </view>
+                    <view class="footer-right">
+                        <view class="button" bindtap="doneEdit()">完成</view>
+                    </view>
+                </block>
+            </view>
         </view>
 
     </view>
@@ -120,7 +122,9 @@
         };
 
         data = {
-            account: {},
+            account: {
+                propertys:[]
+            },
             iconUrl: '',
             delPropIds: [],            // 删除的属性ID
 
@@ -167,15 +171,15 @@
 
                 if (this.hasChanged) {
                     let account = this.account;
-                    let delPropIds = this.delPropIds;
+                    let delPropIds = this.delIds;
 
-                    account.propertys.forEach((item, i) => {
-                        item.account_id = account.id;
-                        item.sort = i;
-                    });
+                    // account.propertys.forEach((item, i) => {
+                    //     item.account_id = account.id;
+                    //     item.sort = i;
+                    // });
 
                     utils.showLoading();
-                    accountApi.save({account, delPropIds})
+                    accountApi.save({account, delPropIds: delIds})
                         .then(res => {
                             utils.hideLoading();
                             if (utils.isSuccess(res)) {
@@ -317,7 +321,7 @@
                 this.removeIndex = -1;
                 this.account.propertys.splice(index, 1);
                 if (item.id) {
-                    this.delPropIds.push(item);
+                    this.delIds.push(item);
                 }
                 this.hasChanged = true;
             },
@@ -348,17 +352,20 @@
         }
 
         async onLoad(options) {
-            this.id = options.id || 3686;
+            this.id = options.id;
+            this.isEditing = options.isEditing;
 
-            utils.showLoading();
-            let result = await accountApi.detail({
-                id: this.id
-            });
-            utils.hideLoading();
+            if (this.id) {
+                utils.showLoading();
+                let result = await accountApi.detail({
+                    id: this.id
+                });
+                utils.hideLoading();
 
-            this.account = result.data;
-            this.iconUrl = result.iconUrl;
-            this.$apply();
+                this.account = result.data;
+                this.iconUrl = result.iconUrl;
+                this.$apply();
+            }
         }
 
     }

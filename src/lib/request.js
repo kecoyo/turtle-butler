@@ -8,8 +8,16 @@ const request = {
                 header: {
                     'Content-Type': 'application/json'
                 },
-                success: function (res) {
-                    resolve(res.data);
+                success: (res) => {
+                    let {data, statusCode} = res;
+                    if (statusCode === 200) {
+                        resolve(data);
+                    } else {
+                        reject(new Error('Error: ' + statusCode));
+                    }
+                },
+                fail: (err) => {
+                    reject(new Error('Error: ' + JSON.stringify(err)));
                 },
                 ...config
             });
@@ -25,8 +33,16 @@ const request = {
                 header: {
                     'Content-Type': 'application/json'
                 },
-                success: function (res) {
-                    resolve(res.data);
+                success: (res) => {
+                    let {data, statusCode} = res;
+                    if (statusCode === 200) {
+                        resolve(data);
+                    } else {
+                        reject(new Error('Error: ' + statusCode));
+                    }
+                },
+                fail: (err) => {
+                    reject(new Error('Error: ' + JSON.stringify(err)));
                 },
                 ...config
             });

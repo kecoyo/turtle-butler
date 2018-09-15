@@ -1,52 +1,68 @@
 <template>
     <view class="page">
         <view class="page-body">
-            <repeat for="{{list}}" key="index" index="index" item="item">
-
-                <div wx:if="{{toIndex == index && startIndex >= index}}" class="category-item"/>
-                <view class="category-item {{startIndex == index ? 'mainmove':'mainend'}}" bindtap="itemTap({{item}})"
-                      style="{{'left:0; top:'+ dragTop +'px'}}">
-                    <view class="item-icon">
-                        <view class="icon" bindtap="selectIcon({{index}})">
-                            <image src="{{iconUrl + item.icon}}"></image>
+            <scroll-view class="scroll-view" style="{{'height:' + scrollViewHeight+'rpx'}}" scroll-y
+                         bindscroll="bindScroll">
+                <repeat for="{{list}}" key="index" index="index" item="item">
+                    <view wx:if="{{toIndex == index && startIndex >= index}}" class="category-item"/>
+                    <view
+                        class="category-item {{startIndex == index ? 'mainmove':'mainend'}}"
+                        bindtap="bindItemTap({{item}})"
+                        style="{{startIndex == index ? ('top:'+ dragTop +'px') : ''}}"
+                    >
+                        <view class="item-wrap"
+                              animation="{{removeIndex == index?itemWrapOutAni:itemWrapInAni}}">
+                            <view class="item-content">
+                                <view class="item-remove" catchtap="bindRemoveCategory({{index}})"
+                                      animation="{{isEditing?itemRemoveInAni:itemRemoveOutAni}}"
+                                >
+                                    <icon class="iconfont icon-remove"></icon>
+                                </view>
+                                <view class="item-icon">
+                                    <view class="icon">
+                                        <image src="{{iconUrl + item.icon}}"></image>
+                                    </view>
+                                </view>
+                                <view class="item-title">
+                                    <text>{{item.name}}</text>
+                                </view>
+                                <view class="item-count">
+                                    <text class="count">{{item.count}}</text>
+                                </view>
+                                <view class="item-drag" animation="{{isEditing?itemDragInAni:itemDragOutAni}}"
+                                      catchtouchstart="bindMoveStart({{index}})"
+                                      catchtouchmove="bindMove({{index}})"
+                                      catchtouchend="bindMoveEnd({{index}})"
+                                >
+                                    <icon class="iconfont icon-tuodong"></icon>
+                                </view>
+                            </view>
+                            <view class="item-delete" catchtap="bindDelCategory({{index}})">
+                                删除
+                            </view>
                         </view>
                     </view>
-                    <view class="item-title">
-                        <input wx:if="{{isEditing}}" value="{{item.name}}" bindinput="nameInput({{index}})"/>
-                        <text wx:else>{{item.name}}</text>
-                    </view>
-                    <view class="item-count" animation="{{isEditing?itemCountOutAni:itemCountInAni}}">
-                        <text class="count">{{item.count}}</text>
-                    </view>
-                    <view class="item-drag" animation="{{isEditing?itemDragInAni:itemDragOutAni}}"
-                          catchtouchstart="moveStart({{index}})" catchtouchmove="move" catchtouchend="moveEnd">
-                        <icon class="iconfont icon-tuodong"></icon>
-                    </view>
-                </view>
-                <div wx:if="{{toIndex == index && startIndex < index}}" class="category-item"/>
-
-            </repeat>
+                    <view wx:if="{{toIndex == index && startIndex < index}}" class="category-item"/>
+                </repeat>
+            </scroll-view>
         </view>
-
         <view class="page-footer">
-            <view class="page-footer-inner">
-                <block wx:if="{{!isEditing}}">
-                    <view class="footer-left">
-                        <view class="button" bindtap="startEdit()">新建分组</view>
-                    </view>
-                    <view class="footer-right">
-                        <view class="button" bindtap="startEdit()">编辑</view>
-                    </view>
-                </block>
-                <block wx:else>
-                    <view class="footer-left">
-                        <view class="button" bindtap="cancelEdit()">取消</view>
-                    </view>
-                    <view class="footer-right">
-                        <view class="button" bindtap="doneEdit()">完成</view>
-                    </view>
-                </block>
-            </view>
+            <block wx:if="{{!isEditing}}">
+                <view class="footer-left">
+                    <view class="button" bindtap="bindAddCategory">新建分组</view>
+                </view>
+                <view class="footer-right">
+                    <view class="button" bindtap="bindEditStart()">编辑</view>
+                </view>
+            </block>
+            <block wx:else>
+                <view class="footer-left">
+                    <view class="button" bindtap="bindEditCancel()">取消</view>
+                </view>
+                <view class="footer-right">
+                    <view class="button" bindtap="bindEditDone()">完成</view>
+                </view>
+            </block>
         </view>
 
     </view>
@@ -56,6 +72,7 @@
     import wepy from 'wepy';
     import categoryApi from '../apis/categoryApi';
     import utils from '../lib/utils';
+    import env from '../lib/env';
 
     let y, y1, y2;
 
@@ -69,8 +86,9 @@
         };
 
         data = {
-            list: [],
             iconUrl: '',
+            list: [],
+            delIds: [],
 
             isEditing: false,   // 编辑状态
             hasChanged: false,  // 有改变
@@ -79,28 +97,49 @@
             toIndex: -1, // 目标位置
             dragTop: -1, // 拖动元素的top
 
+            removeIndex: -1,    // 移除元素的索引
+            deleteIndex: -1,    // 删除元素的索引
+
             // 动画
             itemDragInAni: '',
             itemDragOutAni: '',
             itemCountInAni: '',
             itemCountOutAni: '',
+
+            itemWrapOutAni: '',
+            itemWrapInAni: '',
+
+            deleteAnimation: '',
+
+            itemRemoveInAni: '',
+            itemRemoveOutAni: '',
+
+        };
+
+        computed = {
+            scrollViewHeight() {
+                return utils.px2rem(wx.getSystemInfoSync().windowHeight) - 90;
+            },
+            iconUrl() {
+                return env.iconUrl;
+            }
         };
 
         methods = {
-            startEdit() {
+            bindEditStart() {
                 this.isEditing = true;
                 this.listCopy = this.list.slice(0);
             },
-            doneEdit() {
+            bindEditDone() {
                 if (this.hasChanged) {
-                    let data = this.list.map((item, i) => ({
-                        id: item.id,
-                        name: item.name,
-                        icon: item.icon
-                    }));
+
+                    let list = this.list.map((item) => ({id: item.id}));
+                    let delIds = this.delIds;
 
                     utils.showLoading();
-                    categoryApi.saveAll(data).then(result => {
+                    categoryApi.saveAll({
+                        list, delIds
+                    }).then(result => {
                         utils.hideLoading();
                         if (utils.isSuccess(result)) {
                             utils.showToast('保存成功', 'success');
@@ -113,38 +152,49 @@
                     });
                 } else {
                     this.isEditing = false;
+                    this.removeIndex = -1;
                     this.hasChanged = false;
                 }
             },
-            cancelEdit() {
+            bindEditCancel() {
                 this.list = this.listCopy;
                 this.isEditing = false;
+                this.removeIndex = -1;
                 this.hasChanged = false;
             },
-            itemTap(item) {
-                if (this.isEditing) return;
-                utils.navigateTo(`account?categoryId=${item.id}&categoryName=${item.name}`);
+            bindItemTap(item) {
+                if (this.removeIndex !== -1) {
+                    this.removeIndex = -1;
+                    return;
+                }
+                if (this.isEditing) {
+                    utils.navigateTo(`category-edit?id=${item.id}`);
+                } else {
+                    utils.navigateTo(`account?categoryId=${item.id}&categoryName=${item.name}`);
+                }
             },
-            nameInput(index, e) {
-                this.list[index].name = e.detail.value;
-                this.hasChanged = true;
-            },
-            moveStart: function (index, e) {
+            bindMoveStart(index, e) {
                 if (!this.isEditing) return;
 
                 y = e.touches[0].clientY;
                 y1 = e.currentTarget.offsetTop;
-                y2 = e.touches[0].clientY - y + y1;
+                y2 = e.touches[0].clientY - y + y1 + (index * itemHeight);
+
+                console.log(y, y1, y2);
+
+                console.log(e);
 
                 this.startIndex = index;
                 this.toIndex = index;
                 this.dragTop = y2;
 
             },
-            move: function (e) {
+            bindMove: function (index, e) {
                 if (!this.isEditing) return;
 
-                y2 = e.touches[0].clientY - y + y1;
+                y2 = e.touches[0].clientY - y + y1 + (index * itemHeight);
+
+                console.log(e, e.touches[0].clientY, y, y1, y2);
 
                 var toIndex = 0;
                 for (var i = 1; i < this.list.length; i++) {
@@ -156,36 +206,63 @@
                 this.dragTop = y2;
                 this.toIndex = toIndex;
             },
-            moveEnd: function (e) {
+            bindMoveEnd: function (index, e) {
                 if (!this.isEditing) return;
 
-                let item = this.list[this.startIndex];
+                var item = this.list[this.startIndex];
                 this.list.splice(this.startIndex, 1);
                 this.list.splice(this.toIndex, 0, item);
 
                 this.startIndex = -1;
                 this.toIndex = -1;
                 this.dragTop = -1;
-
                 this.hasChanged = true;
             },
-            selectIcon(index, e) {
-                if (!this.isEditing) return;
-
-                this.editIndex = index;
-                wx.navigateTo({
-                    url: 'select-icon'
-                });
+            bindAddCategory() {
+                utils.navigateTo('category-edit');
             },
-            selectIcon_callback(icon) {
-                this.list[this.editIndex].icon = icon;
+            bindRemoveCategory(index) {
+                this.removeIndex = index;
+                this.itemWrapInAni = this.itemWrapInAni1;
+            },
+            bindDelCategory(index) {
+                let item = this.list[index];
+                // 非空验证
+                if (item.count > 0) {
+                    utils.showToast('分组内有数据，不能删除');
+                    return;
+                }
+                this.removeIndex = -1;
+                this.itemWrapInAni = this.itemWrapInAni2;
+
+                this.list.splice(index, 1);
+                if (item.id) {
+                    this.delIds.push(item);
+                }
                 this.hasChanged = true;
+            },
+            bindScroll(e) {
             }
         };
 
+        onAddCategory(item) {
+            item.count = 0;
+            this.list.push(item);
+            this.$apply();
+        }
+
+        onDataChanged() {
+            this.onLoad();
+        }
+
+        dataChanged() {
+            this.onLoad();
+        }
+
         async onLoad() {
             utils.showLoading();
-            const result = await categoryApi.list();
+            const result = await
+                categoryApi.list();
             utils.hideLoading();
 
             this.list = result.data;
@@ -195,21 +272,40 @@
 
         onReady() {
             // 创建动画
-            var itemDragInAni = wx.createAnimation({timingFunction: 'ease', delay: 400});
+            let itemRemoveInAni = wx.createAnimation({timingFunction: 'ease'});
+            itemRemoveInAni.width('60rpx').step();
+            this.itemRemoveInAni = itemRemoveInAni.export();
+
+            let itemRemoveOutAni = wx.createAnimation({timingFunction: 'ease'});
+            itemRemoveOutAni.width('0rpx').step();
+            this.itemRemoveOutAni = itemRemoveOutAni.export();
+
+            // 创建动画
+            let itemDragInAni = wx.createAnimation({timingFunction: 'ease'});
             itemDragInAni.width('60rpx').step();
             this.itemDragInAni = itemDragInAni.export();
 
-            var itemDragOutAni = wx.createAnimation({timingFunction: 'ease'});
+            let itemDragOutAni = wx.createAnimation({timingFunction: 'ease'});
             itemDragOutAni.width('0rpx').step();
             this.itemDragOutAni = itemDragOutAni.export();
 
-            var itemCountInAni = wx.createAnimation({timingFunction: 'ease', delay: 400});
-            itemCountInAni.width('60rpx').step();
-            this.itemCountInAni = itemCountInAni.export();
+            // 创建动画
+            let itemWrapInAni = wx.createAnimation({timingFunction: 'ease'});
+            itemWrapInAni.translate(0, 0).step();
+            this.itemWrapInAni = itemWrapInAni.export();
 
-            var itemCountOutAni = wx.createAnimation({timingFunction: 'ease'});
-            itemCountOutAni.width('0rpx').step();
-            this.itemCountOutAni = itemCountOutAni.export();
+            let itemWrapOutAni = wx.createAnimation({timingFunction: 'ease'});
+            let px = utils.rem2px(150);
+            itemWrapOutAni.translate('-' + px + 'px', 0).step();
+            this.itemWrapOutAni = itemWrapOutAni.export();
+
+            let itemWrapInAni1 = wx.createAnimation({timingFunction: 'ease'});
+            itemWrapInAni1.translate(0, 0).step();
+            this.itemWrapInAni1 = itemWrapInAni1.export();
+
+            let itemWrapInAni2 = wx.createAnimation({duration: 0, timingFunction: 'ease'});
+            itemWrapInAni2.translate(0, 0).step();
+            this.itemWrapInAni2 = itemWrapInAni2.export();
         }
     }
 </script>
@@ -217,22 +313,61 @@
 <style type="less">
     @import '../style/weui.less';
 
+    .scroll-view {
+        position: relative;
+    }
+
     .category-item {
         @leftGap: ~'30rpx';
         position: relative;
-        display: flex;
         height: ~'120rpx';
-        padding-left: @leftGap;
+        width: ~'750rpx';
 
         &:before {
             .setBottomLine(@weuiLineColorLight);
             left: @leftGap;
         }
 
+        .item-wrap {
+            display: flex;
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: ~'120rpx';
+        }
+
+        .item-content {
+            display: flex;
+            width: ~'750rpx';
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+
+        .item-remove {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            color: @weuiColorWarn;
+            flex-shrink: 0;
+            width: ~'0rpx';
+        }
+
+        .item-delete {
+            background-color: @weuiColorWarn;
+            color: @weuiTextColorWhite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: ~'150rpx';
+            flex-basis: ~'150rpx';
+            flex-shrink: 0;
+        }
+
         .item-icon {
             display: flex;
             justify-content: center;
             align-items: center;
+            margin-left: @leftGap;
 
             .icon {
                 width: ~'90rpx';
@@ -310,13 +445,20 @@
                 font-size: @weuiFontSizeXL;
             }
         }
+
+        .item-delete {
+            background-color: @weuiColorWarn;
+            color: @weuiTextColorWhite;
+            width: ~'120rpx';
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
     }
 
     .mainmove {
-        display: flex;
-        height: ~'120rpx';
         position: absolute;
-        width: 100%;
         z-index: 10;
         opacity: 0.6;
         box-shadow: 0px 0px 20px #333333;
@@ -324,11 +466,7 @@
     }
 
     .mainend {
-        display: flex;
-        height: ~'120rpx';
-        position: inherit;
         opacity: 1;
     }
-
 
 </style>

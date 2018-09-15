@@ -2,6 +2,14 @@ const utils = {
     isSuccess(result) {
         return result && result.code && result.code == '1';
     },
+    // 用Promise封装小程序的其他API
+    promisify(api) {
+        return (options, ...params) => {
+            return new Promise((resolve, reject) => {
+                api(Object.assign({}, options, {success: resolve, fail: reject}), ...params);
+            });
+        };
+    },
     showLoading() {
         wx.showLoading({
             title: '数据加载中',
@@ -12,11 +20,24 @@ const utils = {
         wx.hideLoading();
     },
     showToast(title, icon) {
-        wx.showToast({
-            icon: icon || 'none',
-            title: title ? title.toString() : '',
-            duration: 2000
+        return new Promise((resolve, reject) => {
+            wx.showToast({
+                title: title || 'undefined',
+                icon: icon || 'none',
+                duration: 2000,
+                success: (res) => {
+                    setTimeout(() => {
+                        resolve(res);
+                    }, 2000);
+                },
+                fail: () => {
+                    reject(new Error('Error: wx.showToast'));
+                }
+            });
         });
+    },
+    showSuccess(title) {
+        return utils.showToast(title, 'success');
     },
     html2Escape(sHtml) {
         return sHtml.replace(/[<>&"]/g, function (c) {
@@ -48,6 +69,10 @@ const utils = {
         wx.navigateTo({
             url
         });
+    },
+    // 页面跳转
+    navigateBack() {
+        wx.navigateBack();
     }
 };
 

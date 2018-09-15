@@ -33,8 +33,7 @@
 
         methods = {
             selectIcon(icon) {
-                const pages = this.getCurrentPages();
-                pages[pages.length - 2]['selectIcon_callback'](icon, icon);
+                utils.getParentPage(this).selectIconCallback(icon);
                 wx.navigateBack();
             }
         };

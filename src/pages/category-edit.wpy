@@ -1,0 +1,107 @@
+<template>
+    <view class="page">
+        <view hidden="{{!item}}" class="page__bd">
+            <view class="weui-cells__title"></view>
+            <view class="weui-cells weui-cells_after-title">
+                <view class="weui-cell weui-cell_input">
+                    <view class="weui-cell__hd">
+                        <view class="weui-label">名称</view>
+                    </view>
+                    <view class="weui-cell__bd">
+                        <input class="weui-input" placeholder="请输入名称" value="{{item.name}}" @input="bindNameInput"/>
+                    </view>
+                </view>
+                <view class="weui-cell weui-cell_input">
+                    <view class="weui-cell__hd">
+                        <view class="weui-label">图标</view>
+                    </view>
+                    <view class="weui-cell__bd">
+                        <view class="icon" bindtap="bindSelectIcon">
+                            <image wx:if="{{item.icon}}" src="{{iconUrl + item.icon}}"></image>
+                        </view>
+                    </view>
+                </view>
+            </view>
+            <view class="weui-cells__tips"></view>
+            <view class="weui-btn-area">
+                <button class="weui-btn" type="primary" @tap="bindOk">确定</button>
+            </view>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from 'wepy';
+    import utils from '../lib/utils';
+    import env from '../lib/env';
+    import categoryApi from "../apis/categoryApi";
+
+    export default class CategoryEdit extends wepy.page {
+
+        config = {
+            navigationBarTitleText: '编辑属性'
+        };
+
+        data = {
+            item: null,
+            iconUrl: env.iconUrl
+        };
+
+        methods = {
+            bindSelectIcon(e) {
+                utils.navigateTo('select-icon');
+            },
+            bindNameInput(e) {
+                this.item.name = e.detail.value;
+            },
+            bindOk() {
+                utils.showLoading();
+                categoryApi.save(this.item)
+                    .then(res => {
+                        utils.getParentPage(this).onDataChanged();
+                        utils.navigateBack();
+                        utils.showSuccess(res.msg);
+                    })
+                    .catch(err => {
+                        utils.showToast(err.message);
+                    });
+            }
+        };
+
+        selectIconCallback(icon) {
+            this.item.icon = icon;
+        }
+
+        onLoad(options) {
+            let {id} = options;
+            Promise.resolve()
+                .then(() => {
+                    if (id) {
+                        return categoryApi.load(id);
+                    } else {
+                        return categoryApi.new();
+                    }
+                })
+                .then(res => {
+                    this.item = res.data;
+                    this.$apply();
+                })
+                .catch(err => {
+                    utils.showToast(err.message);
+                });
+        }
+
+    }
+</script>
+
+<style type="less">
+
+    .icon {
+        margin: ~'10rpx' 0;
+        image {
+            display: block;
+            width: ~'100rpx';
+            height: ~'100rpx';
+        }
+    }
+</style>
