@@ -7,10 +7,10 @@
 
         config = {
             'pages': [
-                'pages/account',
                 'pages/category',
-                'pages/category-edit',
                 'pages/account-detail',
+                'pages/account',
+                'pages/category-edit',
                 'pages/add-property',
                 'pages/select-icon',
             ],
@@ -57,10 +57,14 @@
     .page-body {
         display:flex;
         flex: 1;
+        flex-direction: column;
+        overflow-x: hidden;
+        overflow-y: auto;
     }
 
     .page-footer {
         @height: ~'90rpx';
+        width: ~'750rpx';
         flex-shrink: 0;
         height: @height;
         background-color: @weuiBgColorActive;
@@ -73,6 +77,7 @@
             justify-content: flex-start;
             align-items: center;
             flex: 1;
+            flex-shrink: 0;
         }
 
         .footer-center {
@@ -80,6 +85,7 @@
             justify-content: center;
             align-items: center;
             flex: 1;
+            flex-shrink: 0;
         }
 
         .footer-right {
@@ -87,6 +93,7 @@
             justify-content: flex-end;
             align-items: center;
             flex: 1;
+            flex-shrink: 0;
         }
 
         .button {

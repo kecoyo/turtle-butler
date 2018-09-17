@@ -3,7 +3,7 @@
         <view class="page-body">
             <scroll-view class="scroll-view" style="{{'height:' + scrollViewHeight+'rpx'}}" scroll-y
                          bindscroll="bindScroll">
-                <repeat for="{{list}}" key="index" index="index" item="item">
+                <repeat for="{{categorys}}" key="index" index="index" item="item">
                     <view wx:if="{{toIndex == index && startIndex >= index}}" class="category-item"/>
                     <view
                         class="category-item {{startIndex == index ? 'mainmove':'mainend'}}"
@@ -28,6 +28,9 @@
                                 </view>
                                 <view class="item-count">
                                     <text class="count">{{item.count}}</text>
+                                </view>
+                                <view class="item-right">
+                                    <icon class="iconfont icon-right"></icon>
                                 </view>
                                 <view class="item-drag" animation="{{isEditing?itemDragInAni:itemDragOutAni}}"
                                       catchtouchstart="bindMoveStart({{index}})"
@@ -64,7 +67,6 @@
                 </view>
             </block>
         </view>
-
     </view>
 </template>
 
@@ -74,8 +76,8 @@
     import utils from '../lib/utils';
     import env from '../lib/env';
 
+    // 拖动y
     let y, y1, y2;
-
     // 列表元素高度
     let itemHeight = utils.rem2px(120);
 
@@ -87,7 +89,7 @@
 
         data = {
             iconUrl: '',
-            list: [],
+            categorys: [],
             delIds: [],
 
             isEditing: false,   // 编辑状态
@@ -128,17 +130,17 @@
         methods = {
             bindEditStart() {
                 this.isEditing = true;
-                this.listCopy = this.list.slice(0);
+                this.categorys_ = this.categorys.slice(0);
             },
             bindEditDone() {
                 if (this.hasChanged) {
 
-                    let list = this.list.map((item) => ({id: item.id}));
+                    let categorys = this.categorys.map((item) => ({id: item.id}));
                     let delIds = this.delIds;
 
                     utils.showLoading();
                     categoryApi.saveAll({
-                        list, delIds
+                        categorys, delIds
                     }).then(result => {
                         utils.hideLoading();
                         if (utils.isSuccess(result)) {
@@ -157,7 +159,7 @@
                 }
             },
             bindEditCancel() {
-                this.list = this.listCopy;
+                this.categorys = this.categorys_;
                 this.isEditing = false;
                 this.removeIndex = -1;
                 this.hasChanged = false;
@@ -197,7 +199,7 @@
                 console.log(e, e.touches[0].clientY, y, y1, y2);
 
                 var toIndex = 0;
-                for (var i = 1; i < this.list.length; i++) {
+                for (var i = 1; i < this.categorys.length; i++) {
                     if (y2 > (itemHeight * (i - 1) + itemHeight / 2)) {
                         toIndex = i;
                     }
@@ -209,9 +211,9 @@
             bindMoveEnd: function (index, e) {
                 if (!this.isEditing) return;
 
-                var item = this.list[this.startIndex];
-                this.list.splice(this.startIndex, 1);
-                this.list.splice(this.toIndex, 0, item);
+                var item = this.categorys[this.startIndex];
+                this.categorys.splice(this.startIndex, 1);
+                this.categorys.splice(this.toIndex, 0, item);
 
                 this.startIndex = -1;
                 this.toIndex = -1;
@@ -226,7 +228,7 @@
                 this.itemWrapInAni = this.itemWrapInAni1;
             },
             bindDelCategory(index) {
-                let item = this.list[index];
+                let item = this.categorys[index];
                 // 非空验证
                 if (item.count > 0) {
                     utils.showToast('分组内有数据，不能删除');
@@ -235,7 +237,7 @@
                 this.removeIndex = -1;
                 this.itemWrapInAni = this.itemWrapInAni2;
 
-                this.list.splice(index, 1);
+                this.categorys.splice(index, 1);
                 if (item.id) {
                     this.delIds.push(item);
                 }
@@ -247,7 +249,7 @@
 
         onAddCategory(item) {
             item.count = 0;
-            this.list.push(item);
+            this.categorys.push(item);
             this.$apply();
         }
 
@@ -259,15 +261,24 @@
             this.onLoad();
         }
 
-        async onLoad() {
+        fetchCategorys() {
             utils.showLoading();
-            const result = await
-                categoryApi.list();
-            utils.hideLoading();
+            categoryApi.list().then(res => {
+                utils.hideLoading();
+                this.categorys = res.data;
+                this.$apply();
+            }).catch(err => {
+                utils.hideLoading();
+                utils.showToast(err.message);
+            });
+        }
 
-            this.list = result.data;
-            this.iconUrl = result.iconUrl;
-            this.$apply();
+        onLoad() {
+            this.fetchCategorys();
+        }
+
+        onShow() {
+            this.fetchCategorys();
         }
 
         onReady() {
@@ -431,6 +442,17 @@
                 font-size: @weuiFontSize;
                 color: @weuiTextColorWarn;
                 width: ~'30rpx';
+            }
+        }
+
+        .item-right {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-right: ~'25rpx';
+
+            icon {
+                color: @weuiTextColorGray;
             }
         }
 

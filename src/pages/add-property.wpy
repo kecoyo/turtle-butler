@@ -38,7 +38,7 @@
     export default class AddProperty extends wepy.page {
 
         config = {
-            navigationBarTitleText: '编辑属性'
+            navigationBarTitleText: '添加属性'
         };
 
         data = {
@@ -55,11 +55,19 @@
                 this.type = e.detail.value;
             },
             bindOkTap() {
-                utils.getParentPage(this).addPropertyCallback({
-                    name: this.name,
-                    type: Number(this.type) + 1
-                });
-                wx.navigateBack();
+                if (this.name.trim() === '') {
+                    utils.showToast('请输入属性名称');
+                    return;
+                }
+
+                const onAddProperty = utils.getParentPage(this).onAddProperty;
+                if (onAddProperty) {
+                    onAddProperty({
+                        name: this.name,
+                        type: Number(this.type) + 1
+                    });
+                }
+                utils.navigateBack();
             }
         };
 

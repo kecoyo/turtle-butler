@@ -34,7 +34,7 @@
     import wepy from 'wepy';
     import utils from '../lib/utils';
     import env from '../lib/env';
-    import categoryApi from "../apis/categoryApi";
+    import categoryApi from '../apis/categoryApi';
 
     export default class CategoryEdit extends wepy.page {
 
@@ -68,7 +68,7 @@
             }
         };
 
-        selectIconCallback(icon) {
+        onSelectIconSuccess(icon) {
             this.item.icon = icon;
         }
 

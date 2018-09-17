@@ -73,6 +73,11 @@ const utils = {
     // 页面跳转
     navigateBack() {
         wx.navigateBack();
+    },
+    setNavigationBarTitle(title) {
+        wx.setNavigationBarTitle({
+            title
+        });
     }
 };
 

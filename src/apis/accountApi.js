@@ -12,6 +12,13 @@ const accountApi = {
     list: (params) => request.get(env.apiPath + 'account/list', params),
 
     /**
+     * 保存所有
+     * @param params
+     * @returns {*}
+     */
+    saveAll: (params) => request.post(env.apiPath + 'account/saveAll', params),
+
+    /**
      * 详情
      */
     detail: (params) => request.get(env.apiPath + 'account/detail', params),

@@ -33,8 +33,9 @@
 
         methods = {
             selectIcon(icon) {
-                utils.getParentPage(this).selectIconCallback(icon);
-                wx.navigateBack();
+                const onSelectIconSuccess = utils.getParentPage(this).onSelectIconSuccess;
+                onSelectIconSuccess && onSelectIconSuccess(icon);
+                utils.navigateBack();
             }
         };
 
