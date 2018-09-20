@@ -34,7 +34,7 @@
                                       catchtouchmove="bindMove({{index}})"
                                       catchtouchend="bindMoveEnd({{index}})"
                                 >
-                                    <icon class="iconfont icon-tuodong"></icon>
+                                    <icon class="iconfont icon-drag"></icon>
                                 </view>
                             </view>
                             <view class="item-delete" catchtap="bindDelCategory({{index}})">
@@ -158,9 +158,8 @@
                     this.removeIndex = -1;
                     return;
                 }
-                if (!this.isEditing) {
-                    utils.navigateTo(`account-detail?id=${item.id}`);
-                }
+
+                utils.navigateTo(`account-detail?id=${item.id}`);
             },
             bindMoveStart(index, e) {
                 if (!this.isEditing) return;
@@ -386,6 +385,7 @@
             flex-direction: column;
             justify-content: center;
             flex-grow: 1;
+            margin-left: ~'30rpx';
 
             .title {
                 display: flex;

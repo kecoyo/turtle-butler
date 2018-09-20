@@ -11,7 +11,7 @@ const development = {
 /**
  * 开发环境
  */
-const prodServer = 'http://butler.kecoyo.com/';
+const prodServer = 'https://butler.kecoyo.com/';
 const production = {
     devServer,
     apiPath: `${prodServer}api/`,

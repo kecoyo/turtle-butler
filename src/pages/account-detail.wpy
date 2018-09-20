@@ -46,7 +46,7 @@
                                           catchtouchmove="bindMove({{index}})"
                                           catchtouchend="bindMoveEnd({{index}})"
                                     >
-                                        <icon class="iconfont icon-tuodong"></icon>
+                                        <icon class="iconfont icon-drag"></icon>
                                     </view>
                                 </view>
                                 <view class="item-delete" catchtap="bindDelProperty({{index}})">
@@ -58,13 +58,71 @@
                     </repeat>
                 </view>
 
-                <view class="space"></view>
-
-                <view wx:if="{{isEditing}}" class="weui-cells weui-cells_after-title">
-                    <view class="weui-cell weui-cell_link" bindtap="bindAddProperty">
-                        <view class="weui-cell__bd">添加属性</view>
+                <block wx:if="{{isEditing}}">
+                    <view class="space"></view>
+                    <view class="weui-cells weui-cells_after-title">
+                        <view class="weui-cell weui-cell_link" bindtap="bindAddProperty">
+                            <view class="weui-cell__bd">添加属性</view>
+                        </view>
                     </view>
-                </view>
+                </block>
+
+                <block wx:if="{{isEditing && !hasPicture}}">
+                    <view class="space"></view>
+                    <view class="weui-cells weui-cells_after-title">
+                        <view class="weui-cell weui-cell_link" bindtap="bindAddPicture">
+                            <view class="weui-cell__bd">添加图片</view>
+                        </view>
+                    </view>
+                </block>
+
+                <block wx:if="{{hasPicture}}">
+                    <view class="weui-cells__title">图片</view>
+                    <view class="weui-cells weui-cells_after-title">
+                        <view class="weui-cell">
+                            <view class="weui-cell__bd">
+                                <view class="weui-uploader">
+                                    <view class="weui-uploader__bd">
+                                        <view class="weui-uploader__files" id="uploaderFiles">
+                                            <block wx:for="{{files}}" wx:key="*this">
+                                                <view class="weui-uploader__file" @tap="previewImage" id="{{item}}">
+                                                    <image class="weui-uploader__img" src="{{item}}" mode="aspectFill"/>
+                                                </view>
+                                            </block>
+                                        </view>
+                                        <view class="weui-uploader__input-box">
+                                            <view class="weui-uploader__input" @tap="chooseImage"></view>
+                                        </view>
+                                    </view>
+                                </view>
+                            </view>
+                        </view>
+                    </view>
+                </block>
+
+
+                <block wx:if="{{isEditing && !hasRemark}}">
+                    <view class="space"></view>
+                    <view class="weui-cells weui-cells_after-title">
+                        <view class="weui-cell weui-cell_link" bindtap="bindAddRemark">
+                            <view class="weui-cell__bd">添加备注</view>
+                        </view>
+                    </view>
+                </block>
+
+                <block wx:if="{{hasRemark}}">
+                    <view class="weui-cells__title">备注</view>
+                    <view class="weui-cells weui-cells_after-title">
+                        <view class="weui-cell">
+                            <view class="weui-cell__bd">
+                                <textarea wx:if="{{isEditing}}" class="weui-textarea" placeholder="请输入文本"
+                                          value="{{account.remark}}" bindinput="bindRemarkInput"/>
+                                <text wx:else class="weui-textarea">{{account.remark || ''}}</text>
+                            </view>
+                        </view>
+                    </view>
+                </block>
+
             </view>
         </view>
         <view class="page-footer">
@@ -137,6 +195,11 @@
             deleteAnimation: '',
             itemRemoveInAni: '',
             itemRemoveOutAni: '',
+
+            hasRemark: false,
+            hasPicture: false,
+
+            files: []
         };
 
         computed = {
@@ -324,6 +387,29 @@
                         utils.showToast('复制成功');
                     }
                 });
+            },
+            bindRemarkInput(e) {
+                this.account.remark = e.detail.value;
+            },
+            bindAddRemark() {
+                this.hasRemark = true;
+            },
+            bindAddPicture() {
+                this.hasPicture = true;
+            },
+            async chooseImage(e) {
+                let res = await wepy.chooseImage({
+                    sizeType: ['original', 'compressed'], // 可以指定是原图还是压缩图，默认二者都有
+                    sourceType: ['album', 'camera'] // 可以指定来源是相册还是相机，默认二者都有
+                });
+                this.files = this.files.concat(res.tempFilePaths);
+                this.$apply();
+            },
+            previewImage(e) {
+                wepy.previewImage({
+                    current: e.currentTarget.id, // 当前显示图片的http链接
+                    urls: this.data.files // 需要预览的图片http链接列表
+                });
             }
         };
 
@@ -339,6 +425,7 @@
         }
 
         onLoad(options) {
+            // = 3686
             const {categoryId, id} = options;
 
             if (id) {
@@ -346,6 +433,11 @@
                 accountApi.detail({id}).then(res => {
                     utils.hideLoading();
                     this.account = res.data;
+
+                    if (this.account.remark) {
+                        this.hasRemark = true;
+                    }
+
                     this.$apply();
                 }).catch(err => {
                     utils.hideLoading();
@@ -493,6 +585,12 @@
             left: @leftGap;
         }
 
+        &:last-child {
+            &:before {
+                display: none;
+            }
+        }
+
         .item-wrap {
             display: flex;
             position: absolute;
@@ -578,6 +676,10 @@
 
     .mainend {
         opacity: 1;
+    }
+
+    .weui-textarea {
+        height: 4em;
     }
 
 </style>

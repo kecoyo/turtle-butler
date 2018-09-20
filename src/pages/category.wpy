@@ -37,7 +37,7 @@
                                       catchtouchmove="bindMove({{index}})"
                                       catchtouchend="bindMoveEnd({{index}})"
                                 >
-                                    <icon class="iconfont icon-tuodong"></icon>
+                                    <icon class="iconfont icon-drag"></icon>
                                 </view>
                             </view>
                             <view class="item-delete" catchtap="bindDelCategory({{index}})">
