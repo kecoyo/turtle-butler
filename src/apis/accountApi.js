@@ -28,6 +28,12 @@ const accountApi = {
      */
     save: (params) => request.post(env.apiPath + 'account/save', params),
 
+    /**
+     * 上传图片
+     * @param filePath
+     * @returns {*}
+     */
+    uploadImage: (filePath) => request.uploadFile(env.apiPath + 'account/uploadImage', 'file', filePath)
 };
 
 export default accountApi;

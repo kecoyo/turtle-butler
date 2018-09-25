@@ -47,6 +47,18 @@ const request = {
                 ...config
             });
         });
+    },
+    uploadFile(url, name, filePath) {
+        return new Promise((resolve, reject) => {
+            wx.uploadFile({
+                url,
+                name,
+                filePath,
+                header: {},
+                success: (res) => resolve(JSON.parse(res.data)),
+                fail: (err) => reject(err)
+            });
+        });
     }
 
 };

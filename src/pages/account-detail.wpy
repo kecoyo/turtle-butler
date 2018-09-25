@@ -84,13 +84,18 @@
                                 <view class="weui-uploader">
                                     <view class="weui-uploader__bd">
                                         <view class="weui-uploader__files" id="uploaderFiles">
-                                            <block wx:for="{{files}}" wx:key="*this">
-                                                <view class="weui-uploader__file" @tap="previewImage" id="{{item}}">
-                                                    <image class="weui-uploader__img" src="{{item}}" mode="aspectFill"/>
+                                            <block wx:for="{{account.pictures}}" wx:key="index">
+                                                <view class="weui-uploader__file" bindtap="bindPreviewImage({{index}})">
+                                                    <image class="weui-uploader__img"
+                                                           src="{{item.filePath?item.filePath:wwwPath+item.url}}"
+                                                           mode="aspectFill"/>
+                                                    <icon wx:if="{{isEditing}}"
+                                                          class="iconfont icon-remove weui-uploader__icon"
+                                                          catchtap="bindRemovePicture({{index}})"/>
                                                 </view>
                                             </block>
                                         </view>
-                                        <view class="weui-uploader__input-box">
+                                        <view wx:if="{{isEditing}}" class="weui-uploader__input-box">
                                             <view class="weui-uploader__input" @tap="chooseImage"></view>
                                         </view>
                                     </view>
@@ -175,6 +180,7 @@
         data = {
             account: null,              // 账号信息
             delPropIds: [],             // 删除的属性ID
+            delPicIds: [],              // 删除的图片ID
 
             isEditing: false,           // 编辑状态
             hasChanged: false,          // 有改变
@@ -198,8 +204,6 @@
 
             hasRemark: false,
             hasPicture: false,
-
-            files: []
         };
 
         computed = {
@@ -208,6 +212,9 @@
             },
             iconUrl() {
                 return env.iconUrl;
+            },
+            wwwPath() {
+                return env.wwwPath;
             }
         };
 
@@ -219,9 +226,9 @@
                 this.accountCopy.propertys = [...this.account.propertys];
             },
             bindEditDone() {
-                // if (this.hasChanged) {
                 let account = this.account;
                 let delPropIds = this.delPropIds;
+                let delPicIds = this.delPicIds;
 
                 if (account.title === '') {
                     utils.showToast('请输入账号名称');
@@ -234,11 +241,19 @@
                 }
 
                 utils.showLoading();
-                accountApi.save({account, delPropIds})
+                accountApi.save({account, delPropIds, delPicIds})
                     .then(res => {
                         utils.hideLoading();
                         if (utils.isSuccess(res)) {
                             utils.showToast('保存成功', 'success');
+
+                            let account2 = res.data;
+                            this.account = account2;
+                            this.delPropIds = [];
+                            this.delPicIds = [];
+                            this.hasPicture = account2.pictures && account2.pictures.length > 0;
+                            this.hasRemark = account2.remark && account2.remark.length !== 0;
+
                             this.isEditing = false;
                             this.removeIndex = -1;
                             this.hasChanged = false;
@@ -251,12 +266,6 @@
                         utils.hideLoading();
                         utils.showToast(err.message);
                     });
-                // } else {
-                //     this.isEditing = false;
-                //     this.removeIndex = -1;
-                //     this.hasChanged = false;
-                // }
-
             },
             bindEditCancel() {
                 this.account = this.accountCopy;
@@ -402,16 +411,68 @@
                     sizeType: ['original', 'compressed'], // 可以指定是原图还是压缩图，默认二者都有
                     sourceType: ['album', 'camera'] // 可以指定来源是相册还是相机，默认二者都有
                 });
-                this.files = this.files.concat(res.tempFilePaths);
-                this.$apply();
-            },
-            previewImage(e) {
-                wepy.previewImage({
-                    current: e.currentTarget.id, // 当前显示图片的http链接
-                    urls: this.data.files // 需要预览的图片http链接列表
+                res.tempFilePaths.forEach(filePath => {
+                    this.account.pictures.push({
+                        filePath
+                    });
                 });
+                this.uploadImage();
+            },
+            bindPreviewImage(index, e) {
+                let pictures = this.account.pictures;
+                let urlFn = pic => pic.filePath || (this.wwwPath + pic.url);
+                wepy.previewImage({
+                    current: urlFn(pictures[index]), // 当前显示图片的http链接
+                    urls: pictures.map(urlFn)// 需要预览的图片http链接列表
+                });
+            },
+            bindRemovePicture(index) {
+                let pictures = this.account.pictures;
+                let picture = pictures[index];
+                if (picture.id) {
+                    this.delPicIds.push({
+                        id: picture.id,
+                        url: picture.url
+                    });
+                }
+                pictures.splice(index, 1);
             }
         };
+
+        uploadImage() {
+            let promiseFuncArr = this.account.pictures.map((pic) => {
+                return () => {
+                    if (pic.filePath) {
+                        return accountApi.uploadImage(pic.filePath);
+                    } else {
+                        return Promise.resolve();
+                    }
+                };
+            });
+
+            var p = Promise.resolve();
+            // 依次执行数组中的函数，并将返回的Promise替换p
+            for (var i = 0; i <= promiseFuncArr.length; i++) {
+                ((i) => {
+                    p = p.then((data) => {
+                        if (i > 0 && data) {
+                            console.log(i - 1, 'data: ', data);
+                            this.account.pictures[i - 1].url = data.data;
+                            delete this.account.pictures[i - 1].filePath;
+                            this.$apply();
+                        }
+                        if (i === promiseFuncArr.length) {
+                            this.$apply();
+                            return null;
+                        }
+                        // 当i为4时，return promiseFuncArr[4]()后，循环退出，
+                        // 没有then方法获取promiseFuncArr[4]()的回调
+                        // 因此我们多循环一次
+                        return promiseFuncArr[i]();
+                    });
+                })(i);
+            }
+        }
 
         onAddProperty(property) {
             property.account_id = this.account.id;
@@ -437,6 +498,9 @@
                     if (this.account.remark) {
                         this.hasRemark = true;
                     }
+                    if (this.account.pictures.length > 0) {
+                        this.hasPicture = true;
+                    }
 
                     this.$apply();
                 }).catch(err => {
@@ -459,7 +523,8 @@
                             'type': 1,
                             'value': '123456'
                         }
-                    ]
+                    ],
+                    pictures: []
                 };
                 this.isEditing = true;
                 this.hasChanged = true;
@@ -613,7 +678,6 @@
             color: @weuiColorWarn;
             flex-shrink: 0;
             width: ~'0rpx';
-
         }
 
         .item-name {
@@ -680,6 +744,21 @@
 
     .weui-textarea {
         height: 4em;
+    }
+
+    .weui-uploader__file {
+        position: relative;
+    }
+
+    .weui-uploader__icon {
+        position: absolute;
+        top: 0;
+        right: 0;
+        color: @weuiColorWarn;
+        display: flex;
+        line-height: 16px;
+        padding: 3px;
+
     }
 
 </style>
