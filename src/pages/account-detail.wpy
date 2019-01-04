@@ -1,128 +1,115 @@
 <template>
-    <view class="page" wx:if="{{account}}" @tap="bindPageTap">
-        <view class="page-body">
-            <view>
-                <view class="space"></view>
+  <view class="page" wx:if="{{account}}" @tap="bindPageTap">
+    <view class="page-body">
+      <view>
+        <view class="space"></view>
 
-                <view class="account">
-                    <view class="account-icon">
-                        <view class="icon">
-                            <image wx:if="{{iconUrl}}" src="{{iconUrl + account.icon}}" @tap="bindSelectIcon"/>
-                        </view>
-                    </view>
-                    <view class="account-title">
-                        <view class="title">
-                            <input wx:if="{{isEditing}}" value="{{account.title}}" @input="bindTitleInput"/>
-                            <text wx:else>{{account.title}}</text>
-                        </view>
-                    </view>
+        <view class="account">
+          <view class="account-icon">
+            <view class="icon">
+              <image wx:if="{{iconUrl}}" src="{{iconUrl + account.icon}}" @tap="bindSelectIcon" />
+            </view>
+          </view>
+          <view class="account-title">
+            <view class="title">
+              <input wx:if="{{isEditing}}" value="{{account.title}}" @input="bindTitleInput" />
+              <text wx:else>{{account.title}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="space"></view>
+
+        <view class="property-list">
+          <repeat for="{{account.propertys}}" key="index" index="index" item="item">
+            <view wx:if="{{toIndex == index && startIndex >= index}}" class="property-item" />
+            <view class="property-item {{startIndex == index ? 'mainmove':'mainend'}}" style="{{startIndex === index ? ('top:'+ dragTop +'px') : ''}}">
+              <view class="item-wrap" animation="{{removeIndex == index?itemWrapOutAni:itemWrapInAni}}">
+                <view class="item-content">
+                  <view class="item-remove" catchtap="bindRemoveProperty({{index}})" animation="{{isEditing?itemRemoveInAni:itemRemoveOutAni}}">
+                    <icon class="iconfont icon-remove"></icon>
+                  </view>
+                  <view class="item-name">
+                    <text>{{item.name}}</text>
+                  </view>
+                  <view class="item-value">
+                    <input wx:if="{{isEditing}}" value="{{item.value}}" bindinput="bindValueInput({{index}})" />
+                    <text wx:else bindlongtap="bindItemValueLongTap({{item}})">{{item.value}}</text>
+                  </view>
+                  <view class="item-drag" animation="{{isEditing?itemDragInAni:itemDragOutAni}}" catchtouchstart="bindMoveStart({{index}})"
+                        catchtouchmove="bindMove({{index}})" catchtouchend="bindMoveEnd({{index}})">
+                    <icon class="iconfont icon-drag"></icon>
+                  </view>
                 </view>
-
-                <view class="space"></view>
-
-                <view class="property-list">
-                    <repeat for="{{account.propertys}}" key="index" index="index" item="item">
-                        <view wx:if="{{toIndex == index && startIndex >= index}}" class="property-item"/>
-                        <view class="property-item {{startIndex == index ? 'mainmove':'mainend'}}"
-                              style="{{startIndex === index ? ('top:'+ dragTop +'px') : ''}}"
-                        >
-                            <view class="item-wrap"
-                                  animation="{{removeIndex == index?itemWrapOutAni:itemWrapInAni}}">
-                                <view class="item-content">
-                                    <view class="item-remove" catchtap="bindRemoveProperty({{index}})"
-                                          animation="{{isEditing?itemRemoveInAni:itemRemoveOutAni}}">
-                                        <icon class="iconfont icon-remove"></icon>
-                                    </view>
-                                    <view class="item-name">
-                                        <text>{{item.name}}</text>
-                                    </view>
-                                    <view class="item-value">
-                                        <input wx:if="{{isEditing}}" value="{{item.value}}"
-                                               bindinput="bindValueInput({{index}})"/>
-                                        <text wx:else bindlongtap="bindItemValueLongTap({{item}})">{{item.value}}</text>
-                                    </view>
-                                    <view class="item-drag" animation="{{isEditing?itemDragInAni:itemDragOutAni}}"
-                                          catchtouchstart="bindMoveStart({{index}})"
-                                          catchtouchmove="bindMove({{index}})"
-                                          catchtouchend="bindMoveEnd({{index}})"
-                                    >
-                                        <icon class="iconfont icon-drag"></icon>
-                                    </view>
-                                </view>
-                                <view class="item-delete" catchtap="bindDelProperty({{index}})">
-                                    删除
-                                </view>
-                            </view>
-                        </view>
-                        <view wx:if="{{toIndex == index && startIndex < index}}" class="property-item"/>
-                    </repeat>
+                <view class="item-delete" catchtap="bindDelProperty({{index}})">
+                  删除
                 </view>
+              </view>
+            </view>
+            <view wx:if="{{toIndex == index && startIndex < index}}" class="property-item" />
+          </repeat>
+        </view>
 
-                <block wx:if="{{isEditing}}">
-                    <view class="space"></view>
-                    <view class="weui-cells weui-cells_after-title">
-                        <view class="weui-cell weui-cell_link" bindtap="bindAddProperty">
-                            <view class="weui-cell__bd">添加属性</view>
+        <block wx:if="{{isEditing}}">
+          <view class="space"></view>
+          <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell weui-cell_link" bindtap="bindAddProperty">
+              <view class="weui-cell__bd">添加属性</view>
+            </view>
+          </view>
+        </block>
+
+        <block wx:if="{{isEditing && !hasPicture}}">
+          <view class="space"></view>
+          <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell weui-cell_link" bindtap="bindAddPicture">
+              <view class="weui-cell__bd">添加图片</view>
+            </view>
+          </view>
+        </block>
+
+        <block wx:if="{{hasPicture}}">
+          <view class="weui-cells__title">图片</view>
+          <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell">
+              <view class="weui-cell__bd">
+                <view class="weui-uploader">
+                  <view class="weui-uploader__bd">
+                    <view class="weui-uploader__files" id="uploaderFiles">
+                      <block wx:for="{{account.pictures}}" wx:key="index">
+                        <view class="weui-uploader__file" bindtap="bindPreviewImage({{index}})">
+                          <image class="weui-uploader__img" src="{{item.filePath?item.filePath:wwwPath+item.url}}" mode="aspectFill" />
+                          <icon wx:if="{{isEditing}}" class="iconfont icon-remove weui-uploader__icon" catchtap="bindRemovePicture({{index}})" />
                         </view>
+                      </block>
                     </view>
-                </block>
-
-                <block wx:if="{{isEditing && !hasPicture}}">
-                    <view class="space"></view>
-                    <view class="weui-cells weui-cells_after-title">
-                        <view class="weui-cell weui-cell_link" bindtap="bindAddPicture">
-                            <view class="weui-cell__bd">添加图片</view>
-                        </view>
+                    <view wx:if="{{isEditing}}" class="weui-uploader__input-box">
+                      <view class="weui-uploader__input" @tap="chooseImage"></view>
                     </view>
-                </block>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </block>
 
-                <block wx:if="{{hasPicture}}">
-                    <view class="weui-cells__title">图片</view>
-                    <view class="weui-cells weui-cells_after-title">
-                        <view class="weui-cell">
-                            <view class="weui-cell__bd">
-                                <view class="weui-uploader">
-                                    <view class="weui-uploader__bd">
-                                        <view class="weui-uploader__files" id="uploaderFiles">
-                                            <block wx:for="{{account.pictures}}" wx:key="index">
-                                                <view class="weui-uploader__file" bindtap="bindPreviewImage({{index}})">
-                                                    <image class="weui-uploader__img"
-                                                           src="{{item.filePath?item.filePath:wwwPath+item.url}}"
-                                                           mode="aspectFill"/>
-                                                    <icon wx:if="{{isEditing}}"
-                                                          class="iconfont icon-remove weui-uploader__icon"
-                                                          catchtap="bindRemovePicture({{index}})"/>
-                                                </view>
-                                            </block>
-                                        </view>
-                                        <view wx:if="{{isEditing}}" class="weui-uploader__input-box">
-                                            <view class="weui-uploader__input" @tap="chooseImage"></view>
-                                        </view>
-                                    </view>
-                                </view>
-                            </view>
-                        </view>
-                    </view>
-                </block>
+        <block wx:if="{{isEditing && !hasRemark}}">
+          <view class="space"></view>
+          <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell weui-cell_link" bindtap="bindAddRemark">
+              <view class="weui-cell__bd">添加备注</view>
+            </view>
+          </view>
+        </block>
 
-
-                <block wx:if="{{isEditing && !hasRemark}}">
-                    <view class="space"></view>
-                    <view class="weui-cells weui-cells_after-title">
-                        <view class="weui-cell weui-cell_link" bindtap="bindAddRemark">
-                            <view class="weui-cell__bd">添加备注</view>
-                        </view>
-                    </view>
-                </block>
-
-                <block wx:if="{{hasRemark}}">
-                    <view class="weui-cells__title">备注</view>
-                    <view class="weui-cells weui-cells_after-title">
-                        <view class="weui-cell">
-                            <view class="weui-cell__bd">
-                                <textarea wx:if="{{isEditing}}" class="weui-textarea" placeholder="请输入文本"
-                                          value="{{account.remark}}" bindinput="bindRemarkInput"/>
-                                <text wx:else class="weui-textarea">{{account.remark || ''}}</text>
+        <block wx:if="{{hasRemark}}">
+          <view class="weui-cells__title">备注</view>
+          <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell">
+              <view class="weui-cell__bd">
+                <textarea wx:if="{{isEditing}}" class="weui-textarea" placeholder="请输入文本" value="{{account.remark}}"
+                          bindinput="bindRemarkInput" />
+                <text wx:else class="weui-textarea">{{account.remark || ''}}</text>
                             </view>
                         </view>
                     </view>
@@ -152,613 +139,606 @@
 </template>
 
 <script>
-    import wepy from 'wepy';
-    import accountApi from '../apis/accountApi';
-    import env from '../lib/env';
-    import utils from '../lib/utils';
-    import TextItem from '../components/text-item';
-    import NumberItem from '../components/number-item';
-    import PasswordItem from '../components/password-item';
+import wepy from 'wepy';
+import accountApi from '../apis/accountApi';
+import env from '../lib/env';
+import utils from '../lib/utils';
+import TextItem from '../components/text-item';
+import NumberItem from '../components/number-item';
+import PasswordItem from '../components/password-item';
 
-    let y, y1, y2;
+let y, y1, y2;
 
-    // 列表元素高度
-    let itemHeight = utils.rem2px(90);
+// 列表元素高度
+let itemHeight = utils.rem2px(90);
 
-    export default class AccountDetail extends wepy.page {
+export default class AccountDetail extends wepy.page {
+  config = {
+    navigationBarTitleText: '账号详情'
+  };
 
-        config = {
-            navigationBarTitleText: '账号详情'
-        };
+  components = {
+    'text-item': TextItem,
+    'number-item': NumberItem,
+    'password-item': PasswordItem
+  };
 
-        components = {
-            'text-item': TextItem,
-            'number-item': NumberItem,
-            'password-item': PasswordItem
-        };
+  data = {
+    account: null, // 账号信息
+    delPropIds: [], // 删除的属性ID
+    delPicIds: [], // 删除的图片ID
 
-        data = {
-            account: null,              // 账号信息
-            delPropIds: [],             // 删除的属性ID
-            delPicIds: [],              // 删除的图片ID
+    isEditing: false, // 编辑状态
+    hasChanged: false, // 有改变
 
-            isEditing: false,           // 编辑状态
-            hasChanged: false,          // 有改变
+    startIndex: -1, // 原始位置
+    toIndex: -1, // 目标位置
+    dragTop: -1, // 拖动top
+    removeIndex: -1, // 移除索引
+    deleteIndex: -1, // 删除索引
 
-            startIndex: -1,             // 原始位置
-            toIndex: -1,                // 目标位置
-            dragTop: -1,                // 拖动top
-            removeIndex: -1,            // 移除索引
-            deleteIndex: -1,            // 删除索引
+    // 动画
+    itemDragInAni: '',
+    itemDragOutAni: '',
+    itemCountInAni: '',
+    itemCountOutAni: '',
+    itemWrapOutAni: '',
+    itemWrapInAni: '',
+    deleteAnimation: '',
+    itemRemoveInAni: '',
+    itemRemoveOutAni: '',
 
-            // 动画
-            itemDragInAni: '',
-            itemDragOutAni: '',
-            itemCountInAni: '',
-            itemCountOutAni: '',
-            itemWrapOutAni: '',
-            itemWrapInAni: '',
-            deleteAnimation: '',
-            itemRemoveInAni: '',
-            itemRemoveOutAni: '',
+    hasRemark: false,
+    hasPicture: false
+  };
 
-            hasRemark: false,
-            hasPicture: false,
-        };
-
-        computed = {
-            scrollViewHeight() {
-                return utils.px2rem(wx.getSystemInfoSync().windowHeight) - 90;
-            },
-            iconUrl() {
-                return env.iconUrl;
-            },
-            wwwPath() {
-                return env.wwwPath;
-            }
-        };
-
-        methods = {
-            bindEditStart() {
-                this.isEditing = true;
-                // 复制一份
-                this.accountCopy = {...this.account};
-                this.accountCopy.propertys = [...this.account.propertys];
-            },
-            bindEditDone() {
-                let account = this.account;
-                let delPropIds = this.delPropIds;
-                let delPicIds = this.delPicIds;
-
-                if (account.title === '') {
-                    utils.showToast('请输入账号名称');
-                    return;
-                }
-
-                if (account.propertys.length === 0) {
-                    utils.showToast('至少要添加一个属性');
-                    return;
-                }
-
-                utils.showLoading();
-                accountApi.save({account, delPropIds, delPicIds})
-                    .then(res => {
-                        utils.hideLoading();
-                        if (utils.isSuccess(res)) {
-                            utils.showToast('保存成功', 'success');
-
-                            let account2 = res.data;
-                            this.account = account2;
-                            this.delPropIds = [];
-                            this.delPicIds = [];
-                            this.hasPicture = account2.pictures && account2.pictures.length > 0;
-                            this.hasRemark = account2.remark && account2.remark.length !== 0;
-
-                            this.isEditing = false;
-                            this.removeIndex = -1;
-                            this.hasChanged = false;
-                            this.$apply();
-                        } else {
-                            utils.showToast('保存失败');
-                        }
-                    })
-                    .catch(err => {
-                        utils.hideLoading();
-                        utils.showToast(err.message);
-                    });
-            },
-            bindEditCancel() {
-                this.account = this.accountCopy;
-                this.isEditing = false;
-                this.removeIndex = -1;
-                this.hasChanged = false;
-            },
-            bindSelectIcon() {
-                if (this.isEditing) {
-                    wx.navigateTo({
-                        url: 'select-icon'
-                    });
-                }
-            },
-            bindTitleInput(e) {
-                this.account.title = e.detail.value;
-                this.hasChanged = true;
-            },
-            bindValueInput(index, e) {
-                this.account.propertys[index].value = e.detail.value;
-                this.hasChanged = true;
-            },
-            bindAddProperty() {
-                utils.navigateTo('add-property');
-            },
-            bindMoveStart(index, e) {
-                if (!this.isEditing) return;
-
-                y = e.touches[0].clientY;
-                y1 = e.currentTarget.offsetTop;
-                y2 = e.touches[0].clientY - y + y1 + (index * itemHeight);
-
-                console.log(y, y1, y2);
-
-                console.log(e);
-
-                this.startIndex = index;
-                this.toIndex = index;
-                this.dragTop = y2;
-
-            },
-            bindMove: function (index, e) {
-                if (!this.isEditing) return;
-
-                y2 = e.touches[0].clientY - y + y1 + (index * itemHeight);
-
-                console.log(e, e.touches[0].clientY, y, y1, y2);
-
-                let propertys = this.account.propertys;
-                var toIndex = 0;
-                for (var i = 1; i < propertys.length; i++) {
-                    if (y2 > (itemHeight * (i - 1) + itemHeight / 2)) {
-                        toIndex = i;
-                    }
-                }
-
-                this.dragTop = y2;
-                this.toIndex = toIndex;
-            },
-            bindMoveEnd: function (index, e) {
-                if (!this.isEditing) return;
-
-                let propertys = this.account.propertys;
-                var item = propertys[this.startIndex];
-                propertys.splice(this.startIndex, 1);
-                propertys.splice(this.toIndex, 0, item);
-
-                this.startIndex = -1;
-                this.toIndex = -1;
-                this.dragTop = -1;
-                this.hasChanged = true;
-            },
-            bindRemoveProperty(index) {
-                this.removeIndex = index;
-
-                // 创建动画
-                var removeAnimation = wx.createAnimation({
-                    duration: 400,
-                    timingFunction: 'ease',
-                    delay: 0,
-                    transformOrigin: '%50 %50 0',
-                });
-
-                let px = utils.rem2px(120);
-
-                // 设置动画
-                removeAnimation.translate('-' + px + 'px', 0).step();        // 偏移x,y,z
-
-                // 导出动画数据传递给组件的animation属性。
-                this.removeAnimation = removeAnimation.export();
-
-                // 创建动画
-                var removeAnimation2 = wx.createAnimation({
-                    duration: 400,
-                    timingFunction: 'ease',
-                    delay: 0,
-                    transformOrigin: '%50 %50 0',
-                });
-
-                // 设置动画
-                removeAnimation2.translate(0, 0).step();        // 偏移x,y,z
-
-                // 导出动画数据传递给组件的animation属性。
-                this.removeAnimation2 = removeAnimation2.export();
-            },
-            bindDelProperty(index) {
-                let propertys = this.account.propertys;
-                let item = propertys[index];
-
-                this.removeIndex = -1;
-                this.itemWrapInAni = this.itemWrapInAni2;
-
-                propertys.splice(index, 1);
-                if (item.id) {
-                    this.delPropIds.push(item);
-                }
-                this.hasChanged = true;
-            },
-            bindPageTap() {
-                if (this.removeIndex !== -1) {
-                    this.removeIndex = -1;
-                }
-            },
-            bindItemValueLongTap(item) {
-                wx.setClipboardData({
-                    data: item.value,
-                    success: (res) => {
-                        utils.showToast('复制成功');
-                    }
-                });
-            },
-            bindRemarkInput(e) {
-                this.account.remark = e.detail.value;
-            },
-            bindAddRemark() {
-                this.hasRemark = true;
-            },
-            bindAddPicture() {
-                this.hasPicture = true;
-            },
-            async chooseImage(e) {
-                let res = await wepy.chooseImage({
-                    sizeType: ['original', 'compressed'], // 可以指定是原图还是压缩图，默认二者都有
-                    sourceType: ['album', 'camera'] // 可以指定来源是相册还是相机，默认二者都有
-                });
-                res.tempFilePaths.forEach(filePath => {
-                    this.account.pictures.push({
-                        filePath
-                    });
-                });
-                this.uploadImage();
-            },
-            bindPreviewImage(index, e) {
-                let pictures = this.account.pictures;
-                let urlFn = pic => pic.filePath || (this.wwwPath + pic.url);
-                wepy.previewImage({
-                    current: urlFn(pictures[index]), // 当前显示图片的http链接
-                    urls: pictures.map(urlFn)// 需要预览的图片http链接列表
-                });
-            },
-            bindRemovePicture(index) {
-                let pictures = this.account.pictures;
-                let picture = pictures[index];
-                if (picture.id) {
-                    this.delPicIds.push({
-                        id: picture.id,
-                        url: picture.url
-                    });
-                }
-                pictures.splice(index, 1);
-            }
-        };
-
-        uploadImage() {
-            let promiseFuncArr = this.account.pictures.map((pic) => {
-                return () => {
-                    if (pic.filePath) {
-                        return accountApi.uploadImage(pic.filePath);
-                    } else {
-                        return Promise.resolve();
-                    }
-                };
-            });
-
-            var p = Promise.resolve();
-            // 依次执行数组中的函数，并将返回的Promise替换p
-            for (var i = 0; i <= promiseFuncArr.length; i++) {
-                ((i) => {
-                    p = p.then((data) => {
-                        if (i > 0 && data) {
-                            console.log(i - 1, 'data: ', data);
-                            this.account.pictures[i - 1].url = data.data;
-                            delete this.account.pictures[i - 1].filePath;
-                            this.$apply();
-                        }
-                        if (i === promiseFuncArr.length) {
-                            this.$apply();
-                            return null;
-                        }
-                        // 当i为4时，return promiseFuncArr[4]()后，循环退出，
-                        // 没有then方法获取promiseFuncArr[4]()的回调
-                        // 因此我们多循环一次
-                        return promiseFuncArr[i]();
-                    });
-                })(i);
-            }
-        }
-
-        onAddProperty(property) {
-            property.account_id = this.account.id;
-            this.account.propertys.push(property);
-            this.$apply();
-        }
-
-        onSelectIconSuccess(icon) {
-            this.account.icon = icon;
-            this.hasChanged = true;
-        }
-
-        onLoad(options) {
-            // = 3686
-            const {categoryId, id} = options;
-
-            if (id) {
-                utils.showLoading();
-                accountApi.detail({id}).then(res => {
-                    utils.hideLoading();
-                    this.account = res.data;
-
-                    if (this.account.remark) {
-                        this.hasRemark = true;
-                    }
-                    if (this.account.pictures.length > 0) {
-                        this.hasPicture = true;
-                    }
-
-                    this.$apply();
-                }).catch(err => {
-                    utils.hideLoading();
-                    utils.showToast(err.message);
-                });
-            } else if (categoryId) {
-                this.account = {
-                    category_id: categoryId,
-                    title: '新建账号',
-                    icon: 'app/360.png',
-                    propertys: [
-                        {
-                            'name': '账号',
-                            'type': 1,
-                            'value': 'xxxx'
-                        },
-                        {
-                            'name': '密码',
-                            'type': 1,
-                            'value': '123456'
-                        }
-                    ],
-                    pictures: []
-                };
-                this.isEditing = true;
-                this.hasChanged = true;
-            }
-
-        }
-
-        onReady() {
-            // 创建动画
-            let itemRemoveInAni = wx.createAnimation({timingFunction: 'ease'});
-            itemRemoveInAni.width('60rpx').step();
-            this.itemRemoveInAni = itemRemoveInAni.export();
-
-            let itemRemoveOutAni = wx.createAnimation({timingFunction: 'ease'});
-            itemRemoveOutAni.width('0rpx').step();
-            this.itemRemoveOutAni = itemRemoveOutAni.export();
-
-            // 创建动画
-            let itemDragInAni = wx.createAnimation({timingFunction: 'ease'});
-            itemDragInAni.width('60rpx').step();
-            this.itemDragInAni = itemDragInAni.export();
-
-            let itemDragOutAni = wx.createAnimation({timingFunction: 'ease'});
-            itemDragOutAni.width('0rpx').step();
-            this.itemDragOutAni = itemDragOutAni.export();
-
-            // 创建动画
-            let itemWrapInAni = wx.createAnimation({timingFunction: 'ease'});
-            itemWrapInAni.translate(0, 0).step();
-            this.itemWrapInAni = itemWrapInAni.export();
-
-            let itemWrapOutAni = wx.createAnimation({timingFunction: 'ease'});
-            let px = utils.rem2px(150);
-            itemWrapOutAni.translate('-' + px + 'px', 0).step();
-            this.itemWrapOutAni = itemWrapOutAni.export();
-
-            let itemWrapInAni1 = wx.createAnimation({timingFunction: 'ease'});
-            itemWrapInAni1.translate(0, 0).step();
-            this.itemWrapInAni1 = itemWrapInAni1.export();
-
-            let itemWrapInAni2 = wx.createAnimation({duration: 0, timingFunction: 'ease'});
-            itemWrapInAni2.translate(0, 0).step();
-            this.itemWrapInAni2 = itemWrapInAni2.export();
-        }
-
+  computed = {
+    scrollViewHeight() {
+      return utils.px2rem(wx.getSystemInfoSync().windowHeight) - 90;
+    },
+    iconUrl() {
+      return env.iconUrl;
+    },
+    wwwPath() {
+      return env.wwwPath;
     }
+  };
+
+  methods = {
+    bindEditStart() {
+      this.isEditing = true;
+      // 复制一份
+      this.accountCopy = { ...this.account };
+      this.accountCopy.propertys = [...this.account.propertys];
+    },
+    bindEditDone() {
+      let account = this.account;
+      let delPropIds = this.delPropIds;
+      let delPicIds = this.delPicIds;
+
+      if (account.title === '') {
+        utils.showToast('请输入账号名称');
+        return;
+      }
+
+      if (account.propertys.length === 0) {
+        utils.showToast('至少要添加一个属性');
+        return;
+      }
+
+      utils.showLoading();
+      accountApi
+        .save({ account, delPropIds, delPicIds })
+        .then(res => {
+          utils.hideLoading();
+          if (utils.isSuccess(res)) {
+            utils.showToast('保存成功', 'success');
+
+            let account2 = res.data;
+            this.account = account2;
+            this.delPropIds = [];
+            this.delPicIds = [];
+            this.hasPicture = account2.pictures && account2.pictures.length > 0;
+            this.hasRemark = account2.remark && account2.remark.length !== 0;
+
+            this.isEditing = false;
+            this.removeIndex = -1;
+            this.hasChanged = false;
+            this.$apply();
+          } else {
+            utils.showToast('保存失败');
+          }
+        })
+        .catch(err => {
+          utils.hideLoading();
+          utils.showToast(err.message);
+        });
+    },
+    bindEditCancel() {
+      this.account = this.accountCopy;
+      this.isEditing = false;
+      this.removeIndex = -1;
+      this.hasChanged = false;
+    },
+    bindSelectIcon() {
+      if (this.isEditing) {
+        wx.navigateTo({
+          url: 'select-icon'
+        });
+      }
+    },
+    bindTitleInput(e) {
+      this.account.title = e.detail.value;
+      this.hasChanged = true;
+    },
+    bindValueInput(index, e) {
+      this.account.propertys[index].value = e.detail.value;
+      this.hasChanged = true;
+    },
+    bindAddProperty() {
+      utils.navigateTo('add-property');
+    },
+    bindMoveStart(index, e) {
+      if (!this.isEditing) return;
+
+      y = e.touches[0].clientY;
+      y1 = e.currentTarget.offsetTop;
+      y2 = e.touches[0].clientY - y + y1 + index * itemHeight;
+
+      console.log(y, y1, y2);
+
+      console.log(e);
+
+      this.startIndex = index;
+      this.toIndex = index;
+      this.dragTop = y2;
+    },
+    bindMove: function(index, e) {
+      if (!this.isEditing) return;
+
+      y2 = e.touches[0].clientY - y + y1 + index * itemHeight;
+
+      console.log(e, e.touches[0].clientY, y, y1, y2);
+
+      let propertys = this.account.propertys;
+      var toIndex = 0;
+      for (var i = 1; i < propertys.length; i++) {
+        if (y2 > itemHeight * (i - 1) + itemHeight / 2) {
+          toIndex = i;
+        }
+      }
+
+      this.dragTop = y2;
+      this.toIndex = toIndex;
+    },
+    bindMoveEnd: function(index, e) {
+      if (!this.isEditing) return;
+
+      let propertys = this.account.propertys;
+      var item = propertys[this.startIndex];
+      propertys.splice(this.startIndex, 1);
+      propertys.splice(this.toIndex, 0, item);
+
+      this.startIndex = -1;
+      this.toIndex = -1;
+      this.dragTop = -1;
+      this.hasChanged = true;
+    },
+    bindRemoveProperty(index) {
+      this.removeIndex = index;
+
+      // 创建动画
+      var removeAnimation = wx.createAnimation({
+        duration: 400,
+        timingFunction: 'ease',
+        delay: 0,
+        transformOrigin: '%50 %50 0'
+      });
+
+      let px = utils.rem2px(120);
+
+      // 设置动画
+      removeAnimation.translate('-' + px + 'px', 0).step(); // 偏移x,y,z
+
+      // 导出动画数据传递给组件的animation属性。
+      this.removeAnimation = removeAnimation.export();
+
+      // 创建动画
+      var removeAnimation2 = wx.createAnimation({
+        duration: 400,
+        timingFunction: 'ease',
+        delay: 0,
+        transformOrigin: '%50 %50 0'
+      });
+
+      // 设置动画
+      removeAnimation2.translate(0, 0).step(); // 偏移x,y,z
+
+      // 导出动画数据传递给组件的animation属性。
+      this.removeAnimation2 = removeAnimation2.export();
+    },
+    bindDelProperty(index) {
+      let propertys = this.account.propertys;
+      let item = propertys[index];
+
+      this.removeIndex = -1;
+      this.itemWrapInAni = this.itemWrapInAni2;
+
+      propertys.splice(index, 1);
+      if (item.id) {
+        this.delPropIds.push(item);
+      }
+      this.hasChanged = true;
+    },
+    bindPageTap() {
+      if (this.removeIndex !== -1) {
+        this.removeIndex = -1;
+      }
+    },
+    bindItemValueLongTap(item) {
+      wx.setClipboardData({
+        data: item.value,
+        success: res => {
+          utils.showToast('复制成功');
+        }
+      });
+    },
+    bindRemarkInput(e) {
+      this.account.remark = e.detail.value;
+    },
+    bindAddRemark() {
+      this.hasRemark = true;
+    },
+    bindAddPicture() {
+      this.hasPicture = true;
+    },
+    async chooseImage(e) {
+      let res = await wepy.chooseImage({
+        sizeType: ['original', 'compressed'], // 可以指定是原图还是压缩图，默认二者都有
+        sourceType: ['album', 'camera'] // 可以指定来源是相册还是相机，默认二者都有
+      });
+      res.tempFilePaths.forEach(filePath => {
+        this.account.pictures.push({
+          filePath
+        });
+      });
+      this.uploadImage();
+    },
+    bindPreviewImage(index, e) {
+      let pictures = this.account.pictures;
+      let urlFn = pic => pic.filePath || this.wwwPath + pic.url;
+      wepy.previewImage({
+        current: urlFn(pictures[index]), // 当前显示图片的http链接
+        urls: pictures.map(urlFn) // 需要预览的图片http链接列表
+      });
+    },
+    bindRemovePicture(index) {
+      let pictures = this.account.pictures;
+      let picture = pictures[index];
+      if (picture.id) {
+        this.delPicIds.push({
+          id: picture.id,
+          url: picture.url
+        });
+      }
+      pictures.splice(index, 1);
+    }
+  };
+
+  uploadImage() {
+    let promiseFuncArr = this.account.pictures.map(pic => {
+      return () => {
+        if (pic.filePath) {
+          return accountApi.uploadImage(pic.filePath);
+        } else {
+          return Promise.resolve();
+        }
+      };
+    });
+
+    var p = Promise.resolve();
+    // 依次执行数组中的函数，并将返回的Promise替换p
+    for (var i = 0; i <= promiseFuncArr.length; i++) {
+      (i => {
+        p = p.then(data => {
+          if (i > 0 && data) {
+            console.log(i - 1, 'data: ', data);
+            this.account.pictures[i - 1].url = data.data;
+            delete this.account.pictures[i - 1].filePath;
+            this.$apply();
+          }
+          if (i === promiseFuncArr.length) {
+            this.$apply();
+            return null;
+          }
+          // 当i为4时，return promiseFuncArr[4]()后，循环退出，
+          // 没有then方法获取promiseFuncArr[4]()的回调
+          // 因此我们多循环一次
+          return promiseFuncArr[i]();
+        });
+      })(i);
+    }
+  }
+
+  onAddProperty(property) {
+    property.account_id = this.account.id;
+    this.account.propertys.push(property);
+    this.$apply();
+  }
+
+  onSelectIconSuccess(icon) {
+    this.account.icon = icon;
+    this.hasChanged = true;
+  }
+
+  onLoad(options) {
+    // = 3686
+    const { categoryId, id } = options;
+
+    if (id) {
+      utils.showLoading();
+      accountApi
+        .detail({ id })
+        .then(res => {
+          utils.hideLoading();
+          this.account = res.data;
+
+          if (this.account.remark) {
+            this.hasRemark = true;
+          }
+          if (this.account.pictures.length > 0) {
+            this.hasPicture = true;
+          }
+
+          this.$apply();
+        })
+        .catch(err => {
+          utils.hideLoading();
+          utils.showToast(err.message);
+        });
+    } else if (categoryId) {
+      this.account = {
+        category_id: categoryId,
+        title: '新建账号',
+        icon: 'app/360.png',
+        propertys: [
+          {
+            name: '账号',
+            type: 1,
+            value: 'xxxx'
+          },
+          {
+            name: '密码',
+            type: 1,
+            value: '123456'
+          }
+        ],
+        pictures: []
+      };
+      this.isEditing = true;
+      this.hasChanged = true;
+    }
+  }
+
+  onReady() {
+    // 创建动画
+    let itemRemoveInAni = wx.createAnimation({ timingFunction: 'ease' });
+    itemRemoveInAni.width('60rpx').step();
+    this.itemRemoveInAni = itemRemoveInAni.export();
+
+    let itemRemoveOutAni = wx.createAnimation({ timingFunction: 'ease' });
+    itemRemoveOutAni.width('0rpx').step();
+    this.itemRemoveOutAni = itemRemoveOutAni.export();
+
+    // 创建动画
+    let itemDragInAni = wx.createAnimation({ timingFunction: 'ease' });
+    itemDragInAni.width('60rpx').step();
+    this.itemDragInAni = itemDragInAni.export();
+
+    let itemDragOutAni = wx.createAnimation({ timingFunction: 'ease' });
+    itemDragOutAni.width('0rpx').step();
+    this.itemDragOutAni = itemDragOutAni.export();
+
+    // 创建动画
+    let itemWrapInAni = wx.createAnimation({ timingFunction: 'ease' });
+    itemWrapInAni.translate(0, 0).step();
+    this.itemWrapInAni = itemWrapInAni.export();
+
+    let itemWrapOutAni = wx.createAnimation({ timingFunction: 'ease' });
+    let px = utils.rem2px(150);
+    itemWrapOutAni.translate('-' + px + 'px', 0).step();
+    this.itemWrapOutAni = itemWrapOutAni.export();
+
+    let itemWrapInAni1 = wx.createAnimation({ timingFunction: 'ease' });
+    itemWrapInAni1.translate(0, 0).step();
+    this.itemWrapInAni1 = itemWrapInAni1.export();
+
+    let itemWrapInAni2 = wx.createAnimation({ duration: 0, timingFunction: 'ease' });
+    itemWrapInAni2.translate(0, 0).step();
+    this.itemWrapInAni2 = itemWrapInAni2.export();
+  }
+}
 </script>
 
 <style type="less">
-    @import '../style/weui.less';
+@import '../style/weui.less';
 
-    .space {
-        height: ~'20rpx';
+.space {
+  height: ~'20rpx';
+}
+
+.account {
+  background-color: #ffffff;
+  display: flex;
+  flex: 1;
+  padding: ~'20rpx' 0 ~'20rpx' ~'20rpx';
+
+  .account-icon {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 ~'15rpx';
+
+    .icon {
+      width: ~'90rpx';
+      height: ~'90rpx';
+      background-color: @weuiBgColorDefault;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      image {
+        width: 100%;
+        height: 100%;
+      }
     }
+  }
 
-    .account {
-        background-color: #FFFFFF;
-        display: flex;
-        flex: 1;
-        padding: ~'20rpx' 0 ~'20rpx' ~'20rpx';
+  .account-title {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex-grow: 1;
 
-        .account-icon {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0 ~'15rpx';
+    .title {
+      display: flex;
+      align-items: center;
+      font-size: ~'30rpx';
+      height: ~'45rpx';
+      color: @weuiTextColorTitle;
+      font-weight: bold;
+      padding: ~'5rpx';
 
-            .icon {
-                width: ~'90rpx';
-                height: ~'90rpx';
-                background-color: @weuiBgColorDefault;
-                border-radius: 50%;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-
-                image {
-                    width: 100%;
-                    height: 100%;
-                }
-            }
-
-        }
-
-        .account-title {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            flex-grow: 1;
-
-            .title {
-                display: flex;
-                align-items: center;
-                font-size: ~'30rpx';
-                height: ~'45rpx';
-                color: @weuiTextColorTitle;
-                font-weight: bold;
-                padding: ~'5rpx';
-
-                input {
-                    width: 100%;
-                }
-
-            }
-        }
+      input {
+        width: 100%;
+      }
     }
+  }
+}
 
-    .property-list {
-        position: relative;
+.property-list {
+  position: relative;
+}
+
+.property-item {
+  @width: ~'750rpx';
+  @height: ~'90rpx';
+  @leftGap: ~'30rpx';
+  position: relative;
+  width: @width;
+  height: @height;
+  background-color: #ffffff;
+
+  &:before {
+    .setBottomLine(@weuiLineColorLight);
+    left: @leftGap;
+  }
+
+  &:last-child {
+    &:before {
+      display: none;
     }
+  }
 
-    .property-item {
-        @width: ~'750rpx';
-        @height: ~'90rpx';
-        @leftGap: ~'30rpx';
-        position: relative;
-        width: @width;
-        height: @height;
-        background-color: #FFFFFF;
+  .item-wrap {
+    display: flex;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: @height;
+  }
 
-        &:before {
-            .setBottomLine(@weuiLineColorLight);
-            left: @leftGap;
-        }
+  .item-content {
+    display: flex;
+    width: @width;
+    box-sizing: border-box;
+    flex-shrink: 0;
+  }
 
-        &:last-child {
-            &:before {
-                display: none;
-            }
-        }
+  .item-remove {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    color: @weuiColorWarn;
+    flex-shrink: 0;
+    width: ~'0rpx';
+  }
 
-        .item-wrap {
-            display: flex;
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: @height;
-        }
+  .item-name {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    width: ~'200rpx';
+    padding-left: ~'30rpx';
 
-        .item-content {
-            display: flex;
-            width: @width;
-            box-sizing: border-box;
-            flex-shrink: 0;
-        }
-
-        .item-remove {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            color: @weuiColorWarn;
-            flex-shrink: 0;
-            width: ~'0rpx';
-        }
-
-        .item-name {
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            width: ~'200rpx';
-            padding-left: ~'30rpx';
-
-            text {
-                font-size: @weuiFontSize;
-                color: @weuiTextColorTitle;
-            }
-
-        }
-
-        .item-value {
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            flex-grow: 1;
-
-            text {
-                font-size: @weuiFontSize;
-                color: @weuiTextColorGray;
-            }
-        }
-
-        .item-drag {
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            flex-shrink: 0;
-            width: ~'0rpx';
-
-            icon {
-                color: @weuiTextColorGray;
-            }
-        }
-
-        .item-delete {
-            background-color: @weuiColorWarn;
-            color: @weuiTextColorWhite;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: ~'150rpx';
-            flex-shrink: 0;
-        }
-
+    text {
+      font-size: @weuiFontSize;
+      color: @weuiTextColorTitle;
     }
+  }
 
-    .mainmove {
-        position: absolute;
-        z-index: 10;
-        opacity: 0.6;
-        box-shadow: 0px 0px 20px #333333;
+  .item-value {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    flex-grow: 1;
 
+    text {
+      font-size: @weuiFontSize;
+      color: @weuiTextColorGray;
     }
+  }
 
-    .mainend {
-        opacity: 1;
+  .item-drag {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    flex-shrink: 0;
+    width: ~'0rpx';
+
+    icon {
+      color: @weuiTextColorGray;
     }
+  }
 
-    .weui-textarea {
-        height: 4em;
-    }
+  .item-delete {
+    background-color: @weuiColorWarn;
+    color: @weuiTextColorWhite;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: ~'150rpx';
+    flex-shrink: 0;
+  }
+}
 
-    .weui-uploader__file {
-        position: relative;
-    }
+.mainmove {
+  position: absolute;
+  z-index: 10;
+  opacity: 0.6;
+  box-shadow: 0px 0px 20px #333333;
+}
 
-    .weui-uploader__icon {
-        position: absolute;
-        top: 0;
-        right: 0;
-        color: @weuiColorWarn;
-        display: flex;
-        line-height: 16px;
-        padding: 3px;
+.mainend {
+  opacity: 1;
+}
 
-    }
+.weui-textarea {
+  height: 4em;
+}
 
+.weui-uploader__file {
+  position: relative;
+}
+
+.weui-uploader__icon {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: @weuiColorWarn;
+  display: flex;
+  line-height: 16px;
+  padding: 3px;
+}
 </style>
