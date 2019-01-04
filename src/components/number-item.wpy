@@ -1,56 +1,53 @@
 <template>
-    <view class="property-item">
-        <view class="property-item-inner">
-            <view class="item-left">
-                <text>{{item.name}}</text>
-            </view>
-            <view class="item-center">
-                <input wx:if="{{isEditing}}" value="{{item.value}}" bindinput="bindinput"/>
-                <text wx:else bindlongtap="copyToClipboard">{{item.value}}</text>
-            </view>
-        </view>
+  <view class="property-item">
+    <view class="property-item-inner">
+      <view class="item-left">
+        <text>{{item.name}}</text>
+      </view>
+      <view class="item-center">
+        <input wx:if="{{isEditing}}" value="{{item.value}}" bindinput="bindinput" />
+        <text wx:else bindlongtap="copyToClipboard">{{item.value}}</text>
+      </view>
     </view>
+  </view>
 </template>
 
 <script>
+import wepy from 'wepy';
+import utils from '../lib/utils';
 
-    import wepy from 'wepy';
-    import utils from '../lib/utils';
+/**
+ * 作品条目
+ */
+export default class NumberItem extends wepy.component {
+  props = {
+    item: { type: Object, default: {} },
+    isEditing: { type: Boolean, default: false }
+  };
 
-    /**
-     * 作品条目
-     */
-    export default class NumberItem extends wepy.component {
-
-        props = {
-            item: {type: Object, default: {}},
-            isEditing: {type: Boolean, default: false},
-        };
-
-        methods = {
-            copyToClipboard() {
-                wx.setClipboardData({
-                    data: this.item.value,
-                    success: (res) => {
-                        utils.showToast('复制成功');
-                    }
-                });
-            },
-            bindinput(e) {
-                this.item.value = e.detail.value;
-            }
+  methods = {
+    copyToClipboard() {
+      wx.setClipboardData({
+        data: this.item.value,
+        success: res => {
+          utils.showToast('复制成功');
         }
+      });
+    },
+    bindinput(e) {
+      this.item.value = e.detail.value;
     }
-
+  };
+}
 </script>
 
 <style lang="less">
-    @import '../style/weui.less';
+@import '../style/weui.less';
 
-    .property-item {
-        input {
-            font-size: @weuiFontSize;
-            color: @weuiTextColorTitle;
-        }
-    }
+.property-item {
+  input {
+    font-size: @weuiFontSize;
+    color: @weuiTextColorTitle;
+  }
+}
 </style>

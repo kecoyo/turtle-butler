@@ -3,9 +3,9 @@
  */
 const devServer = 'http://localhost:8701';
 const development = {
-    wwwPath: `${devServer}/`,
-    apiPath: `${devServer}/api/`,
-    iconUrl: `${devServer}/icons/`
+  wwwPath: `${devServer}/`,
+  apiPath: `${devServer}/api/`,
+  iconUrl: `${devServer}/icons/`
 };
 
 /**
@@ -13,9 +13,9 @@ const development = {
  */
 const prodServer = 'https://butler.kecoyo.com';
 const production = {
-    wwwPath: `${prodServer}/`,
-    apiPath: `${prodServer}/api/`,
-    iconUrl: `${prodServer}/icons/`
+  wwwPath: `${prodServer}/`,
+  apiPath: `${prodServer}/api/`,
+  iconUrl: `${prodServer}/icons/`
 };
 
 export default production;
