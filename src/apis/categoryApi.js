@@ -12,39 +12,31 @@ const categoryApi = {
   list: () => request.get(env.apiPath + 'category/list'),
 
   /**
-   * 保存所有
-   * @param params
+   * 账号详情
+   * @param id
    * @returns {*}
    */
-  saveAll: params => request.post(env.apiPath + 'category/saveAll', params),
+  detail: id => request.get(env.apiPath + 'category/detail', { id }),
 
   /**
-   * 新建
-   * @param data
+   * 获取新账号
    * @returns {*}
    */
   new: () => request.get(env.apiPath + 'category/new'),
 
   /**
-   * 加载
-   * @param id
-   * @returns {*}
-   */
-  load: id => request.get(env.apiPath + 'category/load', { id }),
-
-  /**
-   * 保存
+   * 保存账号
    * @param data {name, icon}
    * @returns {*}
    */
   save: data => request.post(env.apiPath + 'category/save', data),
 
   /**
-   * 加载
-   * @param id
+   * 保存所有账号
+   * @param params
    * @returns {*}
    */
-  delete: id => request.get(env.apiPath + 'category/delete', { id })
+  saveAll: params => request.post(env.apiPath + 'category/saveAll', params)
 };
 
 export default categoryApi;

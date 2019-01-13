@@ -141,6 +141,7 @@
 <script>
 import wepy from 'wepy';
 import accountApi from '../apis/accountApi';
+import fileApi from '../apis/fileApi';
 import env from '../lib/env';
 import utils from '../lib/utils';
 import TextItem from '../components/text-item';
@@ -227,27 +228,34 @@ export default class AccountDetail extends wepy.page {
       }
 
       utils.showLoading();
+      let { id, category_id, title, subtitle, icon, remark } = account;
+      let properties = account.propertys;
+      let pictures = account.pictures;
+      console.log('​AccountDetail -> bindEditDone -> properties', properties);
+      console.log('​AccountDetail -> bindEditDone -> pictures', pictures);
       accountApi
-        .save({ account, delPropIds, delPicIds })
+        .save({
+          account: { id, category_id, title, subtitle, icon, remark },
+          properties,
+          pictures,
+          delPropIds,
+          delPicIds
+        })
         .then(res => {
           utils.hideLoading();
-          if (utils.isSuccess(res)) {
-            utils.showToast('保存成功', 'success');
+          utils.showToast('保存成功', 'success');
 
-            let account2 = res.data;
-            this.account = account2;
-            this.delPropIds = [];
-            this.delPicIds = [];
-            this.hasPicture = account2.pictures && account2.pictures.length > 0;
-            this.hasRemark = account2.remark && account2.remark.length !== 0;
+          let account2 = res.data;
+          this.account = account2;
+          this.delPropIds = [];
+          this.delPicIds = [];
+          this.hasPicture = account2.pictures && account2.pictures.length > 0;
+          this.hasRemark = account2.remark && account2.remark.length !== 0;
 
-            this.isEditing = false;
-            this.removeIndex = -1;
-            this.hasChanged = false;
-            this.$apply();
-          } else {
-            utils.showToast('保存失败');
-          }
+          this.isEditing = false;
+          this.removeIndex = -1;
+          this.hasChanged = false;
+          this.$apply();
         })
         .catch(err => {
           utils.hideLoading();
@@ -366,7 +374,7 @@ export default class AccountDetail extends wepy.page {
 
       propertys.splice(index, 1);
       if (item.id) {
-        this.delPropIds.push(item);
+        this.delPropIds.push(item.id);
       }
       this.hasChanged = true;
     },
@@ -416,10 +424,7 @@ export default class AccountDetail extends wepy.page {
       let pictures = this.account.pictures;
       let picture = pictures[index];
       if (picture.id) {
-        this.delPicIds.push({
-          id: picture.id,
-          url: picture.url
-        });
+        this.delPicIds.push(picture.id);
       }
       pictures.splice(index, 1);
     }
@@ -429,7 +434,7 @@ export default class AccountDetail extends wepy.page {
     let promiseFuncArr = this.account.pictures.map(pic => {
       return () => {
         if (pic.filePath) {
-          return accountApi.uploadImage(pic.filePath);
+          return fileApi.upload(pic.filePath);
         } else {
           return Promise.resolve();
         }
@@ -474,11 +479,10 @@ export default class AccountDetail extends wepy.page {
   onLoad(options) {
     // = 3686
     const { categoryId, id } = options;
-
     if (id) {
       utils.showLoading();
       accountApi
-        .detail({ id })
+        .detail(id)
         .then(res => {
           utils.hideLoading();
           this.account = res.data;
@@ -497,26 +501,23 @@ export default class AccountDetail extends wepy.page {
           utils.showToast(err.message);
         });
     } else if (categoryId) {
-      this.account = {
-        category_id: categoryId,
-        title: '新建账号',
-        icon: 'app/360.png',
-        propertys: [
-          {
-            name: '账号',
-            type: 1,
-            value: 'xxxx'
-          },
-          {
-            name: '密码',
-            type: 1,
-            value: '123456'
-          }
-        ],
-        pictures: []
-      };
-      this.isEditing = true;
-      this.hasChanged = true;
+      utils.showLoading();
+      accountApi
+        .new()
+        .then(result => {
+          utils.hideLoading();
+          this.account = {
+            ...result.data,
+            category_id: categoryId
+          };
+          this.isEditing = true;
+          this.hasChanged = true;
+          this.$apply();
+        })
+        .catch(err => {
+          utils.hideLoading();
+          utils.showToast(err.message);
+        });
     }
   }
 

@@ -1,11 +1,11 @@
 /**
  * 开发环境
  */
-const devServer = 'http://localhost:8701';
+const devServer = 'http://localhost:8360';
 const development = {
   wwwPath: `${devServer}/`,
   apiPath: `${devServer}/api/`,
-  iconUrl: `${devServer}/icons/`
+  iconUrl: `${devServer}/`
 };
 
 /**
@@ -18,4 +18,4 @@ const production = {
   iconUrl: `${prodServer}/icons/`
 };
 
-export default production;
+export default development;

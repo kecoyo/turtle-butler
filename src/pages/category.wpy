@@ -13,7 +13,8 @@
                 </view>
                 <view class="item-icon">
                   <view class="icon">
-                    <image src="{{iconUrl + item.icon}}"></image>
+                    <image wx:if="{{item.icon}}" src="{{iconUrl + item.icon}}" />
+                    <image wx:else src="../images/default-category.png" />
                   </view>
                 </view>
                 <view class="item-title">
@@ -133,14 +134,10 @@ export default class Category extends wepy.page {
           })
           .then(result => {
             utils.hideLoading();
-            if (utils.isSuccess(result)) {
-              utils.showToast('保存成功', 'success');
-              this.isEditing = false;
-              this.hasChanged = false;
-              this.$apply();
-            } else {
-              utils.showToast('保存失败');
-            }
+            utils.showToast('保存成功', 'success');
+            this.isEditing = false;
+            this.hasChanged = false;
+            this.$apply();
           });
       } else {
         this.isEditing = false;
@@ -228,7 +225,7 @@ export default class Category extends wepy.page {
 
       this.categorys.splice(index, 1);
       if (item.id) {
-        this.delIds.push(item);
+        this.delIds.push(item.id);
       }
       this.hasChanged = true;
     },
@@ -265,7 +262,7 @@ export default class Category extends wepy.page {
   }
 
   onLoad() {
-    this.fetchCategorys();
+    // this.fetchCategorys();
   }
 
   onShow() {

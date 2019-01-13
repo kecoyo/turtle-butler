@@ -11,16 +11,14 @@ const accountApi = {
   list: params => request.get(env.apiPath + 'account/list', params),
 
   /**
-   * 保存所有
-   * @param params
-   * @returns {*}
-   */
-  saveAll: params => request.post(env.apiPath + 'account/saveAll', params),
-
-  /**
    * 详情
    */
-  detail: params => request.get(env.apiPath + 'account/detail', params),
+  detail: id => request.get(env.apiPath + 'account/detail', { id }),
+
+  /**
+   * 新建
+   */
+  new: () => request.get(env.apiPath + 'account/new'),
 
   /**
    * 保存
@@ -28,11 +26,9 @@ const accountApi = {
   save: params => request.post(env.apiPath + 'account/save', params),
 
   /**
-   * 上传图片
-   * @param filePath
-   * @returns {*}
+   * 保存所有
    */
-  uploadImage: filePath => request.uploadFile(env.apiPath + 'account/uploadImage', 'file', filePath)
+  saveAll: data => request.post(env.apiPath + 'account/saveAll', data)
 };
 
 export default accountApi;
