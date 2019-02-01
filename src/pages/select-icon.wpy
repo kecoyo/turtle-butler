@@ -5,7 +5,7 @@
         <view class="icon-list">
           <repeat for="{{item.icons}}" key="index2" index="index2" item="item2">
             <view class="icon-item" bindtap="selectIcon({{item2}})">
-              <image src="{{iconUrl + item2}}" />
+              <image src="{{serverUrl + item2}}" />
             </view>
           </repeat>
         </view>
@@ -28,13 +28,7 @@ export default class Category extends wepy.page {
   data = {
     callback: '',
     list: [],
-    iconUrl: ''
-  };
-
-  computed = {
-    iconUrl() {
-      return env.iconUrl;
-    }
+    serverUrl: env.serverUrl
   };
 
   methods = {

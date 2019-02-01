@@ -13,7 +13,7 @@
                 </view>
                 <view class="item-icon">
                   <view class="icon">
-                    <image wx:if="{{item.icon}}" src="{{iconUrl + item.icon}}" />
+                    <image wx:if="{{item.icon}}" src="{{serverUrl + item.icon}}" />
                     <image wx:else src="../images/default-category.png" />
                   </view>
                 </view>
@@ -78,7 +78,8 @@ export default class Category extends wepy.page {
   };
 
   data = {
-    iconUrl: '',
+    serverUrl: env.serverUrl,
+
     categorys: [],
     delIds: [],
 
@@ -110,9 +111,6 @@ export default class Category extends wepy.page {
   computed = {
     scrollViewHeight() {
       return utils.px2rem(wx.getSystemInfoSync().windowHeight) - 90;
-    },
-    iconUrl() {
-      return env.iconUrl;
     }
   };
 

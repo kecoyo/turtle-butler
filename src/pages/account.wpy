@@ -13,7 +13,7 @@
                 </view>
                 <view class="item-icon">
                   <view class="icon">
-                    <image src="{{iconUrl + item.icon}}"></image>
+                    <image src="{{serverUrl + item.icon}}" />
                   </view>
                 </view>
                 <view class="item-title">
@@ -75,6 +75,8 @@ export default class Account extends wepy.page {
   };
 
   data = {
+    serverUrl: env.serverUrl,
+
     category: null, // 分类
     accounts: [], // 列表数据
     delIds: [], // 删除的账号id
@@ -103,9 +105,6 @@ export default class Account extends wepy.page {
   computed = {
     scrollViewHeight() {
       return utils.px2rem(wx.getSystemInfoSync().windowHeight) - 90;
-    },
-    iconUrl() {
-      return env.iconUrl;
     }
   };
 

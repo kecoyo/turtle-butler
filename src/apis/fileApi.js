@@ -1,5 +1,4 @@
 import request from '../lib/request';
-import env from '../lib/env';
 
 /**
  * 文件Api
@@ -10,7 +9,7 @@ const fileApi = {
    * @param filePath
    * @returns {*}
    */
-  upload: filePath => request.uploadFile(env.apiPath + 'file/upload', 'file', filePath)
+  upload: filePath => request.uploadFile('file/upload', 'file', filePath)
 };
 
 export default fileApi;

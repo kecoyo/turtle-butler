@@ -1,8 +1,10 @@
+import env from './env';
+
 const request = {
   get(url, params, config) {
     return new Promise((resolve, reject) => {
       wx.request({
-        url,
+        url: env.apiUrl + url,
         data: params,
         header: {
           'Content-Type': 'application/json'
@@ -27,7 +29,7 @@ const request = {
     return new Promise((resolve, reject) => {
       wx.request({
         method: 'POST',
-        url,
+        url: env.apiUrl + url,
         data: data,
         header: {
           'Content-Type': 'application/json'
@@ -50,7 +52,7 @@ const request = {
   uploadFile(url, name, filePath) {
     return new Promise((resolve, reject) => {
       wx.uploadFile({
-        url,
+        url: env.apiUrl + url,
         name,
         filePath,
         header: {},

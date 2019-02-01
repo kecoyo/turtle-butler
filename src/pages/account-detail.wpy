@@ -7,7 +7,7 @@
         <view class="account">
           <view class="account-icon">
             <view class="icon">
-              <image wx:if="{{iconUrl}}" src="{{iconUrl + account.icon}}" @tap="bindSelectIcon" />
+              <image wx:if="{{serverUrl}}" src="{{serverUrl + account.icon}}" @tap="bindSelectIcon" />
             </view>
           </view>
           <view class="account-title">
@@ -78,7 +78,8 @@
                     <view class="weui-uploader__files" id="uploaderFiles">
                       <block wx:for="{{account.pictures}}" wx:key="index">
                         <view class="weui-uploader__file" bindtap="bindPreviewImage({{index}})">
-                          <image class="weui-uploader__img" src="{{item.filePath?item.filePath:wwwPath+item.url}}" mode="aspectFill" />
+                          <image class="weui-uploader__img" src="{{item.filePath?item.filePath:serverUrl+item.url}}"
+                                 mode="aspectFill" />
                           <icon wx:if="{{isEditing}}" class="iconfont icon-remove weui-uploader__icon" catchtap="bindRemovePicture({{index}})" />
                         </view>
                       </block>
@@ -165,6 +166,8 @@ export default class AccountDetail extends wepy.page {
   };
 
   data = {
+    serverUrl: env.serverUrl,
+
     account: null, // 账号信息
     delPropIds: [], // 删除的属性ID
     delPicIds: [], // 删除的图片ID
@@ -196,12 +199,6 @@ export default class AccountDetail extends wepy.page {
   computed = {
     scrollViewHeight() {
       return utils.px2rem(wx.getSystemInfoSync().windowHeight) - 90;
-    },
-    iconUrl() {
-      return env.iconUrl;
-    },
-    wwwPath() {
-      return env.wwwPath;
     }
   };
 
@@ -231,8 +228,6 @@ export default class AccountDetail extends wepy.page {
       let { id, category_id, title, subtitle, icon, remark } = account;
       let properties = account.propertys;
       let pictures = account.pictures;
-      console.log('​AccountDetail -> bindEditDone -> properties', properties);
-      console.log('​AccountDetail -> bindEditDone -> pictures', pictures);
       accountApi
         .save({
           account: { id, category_id, title, subtitle, icon, remark },
@@ -414,7 +409,7 @@ export default class AccountDetail extends wepy.page {
     },
     bindPreviewImage(index, e) {
       let pictures = this.account.pictures;
-      let urlFn = pic => pic.filePath || this.wwwPath + pic.url;
+      let urlFn = pic => pic.filePath || this.serverUrl + pic.url;
       wepy.previewImage({
         current: urlFn(pictures[index]), // 当前显示图片的http链接
         urls: pictures.map(urlFn) // 需要预览的图片http链接列表
@@ -447,9 +442,9 @@ export default class AccountDetail extends wepy.page {
       (i => {
         p = p.then(data => {
           if (i > 0 && data) {
-            console.log(i - 1, 'data: ', data);
-            this.account.pictures[i - 1].url = data.data;
+            this.account.pictures[i - 1].url = data.data.path;
             delete this.account.pictures[i - 1].filePath;
+            console.log('TCL: AccountDetail -> uploadImage -> this.account', this.account);
             this.$apply();
           }
           if (i === promiseFuncArr.length) {
