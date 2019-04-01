@@ -7,7 +7,7 @@
         <view class="account">
           <view class="account-icon">
             <view class="icon">
-              <image wx:if="{{serverUrl}}" src="{{serverUrl + account.icon}}" @tap="bindSelectIcon" />
+              <image wx:if="{{imgUrl}}" src="{{imgUrl + account.icon}}" @tap="bindSelectIcon" />
             </view>
           </view>
           <view class="account-title">
@@ -78,8 +78,7 @@
                     <view class="weui-uploader__files" id="uploaderFiles">
                       <block wx:for="{{account.pictures}}" wx:key="index">
                         <view class="weui-uploader__file" bindtap="bindPreviewImage({{index}})">
-                          <image class="weui-uploader__img" src="{{item.filePath?item.filePath:serverUrl+item.url}}"
-                                 mode="aspectFill" />
+                          <image class="weui-uploader__img" src="{{item.filePath?item.filePath:imgUrl+item.url}}" mode="aspectFill" />
                           <icon wx:if="{{isEditing}}" class="iconfont icon-remove weui-uploader__icon" catchtap="bindRemovePicture({{index}})" />
                         </view>
                       </block>
@@ -166,7 +165,7 @@ export default class AccountDetail extends wepy.page {
   };
 
   data = {
-    serverUrl: env.serverUrl,
+    imgUrl: '',
 
     account: null, // 账号信息
     delPropIds: [], // 删除的属性ID
@@ -409,7 +408,7 @@ export default class AccountDetail extends wepy.page {
     },
     bindPreviewImage(index, e) {
       let pictures = this.account.pictures;
-      let urlFn = pic => pic.filePath || this.serverUrl + pic.url;
+      let urlFn = pic => pic.filePath || this.imgUrl + pic.url;
       wepy.previewImage({
         current: urlFn(pictures[index]), // 当前显示图片的http链接
         urls: pictures.map(urlFn) // 需要预览的图片http链接列表
@@ -481,6 +480,7 @@ export default class AccountDetail extends wepy.page {
         .then(res => {
           utils.hideLoading();
           this.account = res.data;
+          this.imgUrl = res.imgUrl;
 
           if (this.account.remark) {
             this.hasRemark = true;

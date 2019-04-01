@@ -9,7 +9,7 @@ const fileApi = {
    * @param filePath
    * @returns {*}
    */
-  upload: filePath => request.uploadFile('file/upload', 'file', filePath)
+  upload: filePath => request.uploadFile('/file/upload', 'file', filePath)
 };
 
 export default fileApi;

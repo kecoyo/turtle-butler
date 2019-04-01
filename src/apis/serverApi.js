@@ -8,7 +8,7 @@ const serverApi = {
    * 图标列表
    * @returns {*}
    */
-  iconList: () => request.get('icon/list')
+  iconList: () => request.get('/icon/list')
 };
 
 export default serverApi;

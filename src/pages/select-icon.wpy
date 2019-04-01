@@ -1,16 +1,27 @@
 <template>
   <view class="page">
-    <scroll-view class="page-body" scroll-y>
-      <repeat for="{{list}}" key="index" index="index" item="item">
-        <view class="icon-list">
-          <repeat for="{{item.icons}}" key="index2" index="index2" item="item2">
-            <view class="icon-item" bindtap="selectIcon({{item2}})">
-              <image src="{{serverUrl + item2}}" />
+    <view class="page-body">
+      <view class="weui-tab">
+        <view class="weui-navbar">
+          <view wx:for="{{list}}" wx:key="*this" id="{{index}}" class="weui-navbar__item {{activeIndex == index ? 'weui-bar__item_on' : ''}}"
+                @tap="tabClick">
+            <view class="weui-navbar__title">{{types[item.name]}}</view>
+          </view>
+          <view class="weui-navbar__slider" style="left: {{sliderLeft}}px; transform: translateX({{sliderOffset}}px); -webkit-transform: translateX({{sliderOffset}}px);"></view>
+        </view>
+        <view class="weui-tab__panel">
+          <repeat for="{{list}}" item="item" index="index" key="index">
+            <view class="weui-tab__content" hidden="{{activeIndex != index}}">
+              <repeat for="{{item.icons}}" item="item2" index="index2" key="index2">
+                <view class="icon-item" bindtap="selectIcon({{item2}})">
+                  <image src="{{imgUrl + item2}}" />
+                </view>
+              </repeat>
             </view>
           </repeat>
         </view>
-      </repeat>
-    </scroll-view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -18,7 +29,8 @@
 import wepy from 'wepy';
 import serverApi from '../apis/serverApi';
 import utils from '../lib/utils';
-import env from '../lib/env';
+
+const sliderWidth = 96; // 需要设置slider的宽度，用于计算中间位置
 
 export default class Category extends wepy.page {
   config = {
@@ -28,10 +40,26 @@ export default class Category extends wepy.page {
   data = {
     callback: '',
     list: [],
-    serverUrl: env.serverUrl
+    imgUrl: '',
+
+    tabs: ['选项一', '选项二', '选项三'],
+
+    activeIndex: 0,
+    sliderOffset: 0,
+    sliderLeft: 0,
+
+    types: {
+      app: '应用类',
+      bank: '银行类',
+      web: '网站类'
+    }
   };
 
   methods = {
+    tabClick(e) {
+      this.sliderOffset = e.currentTarget.offsetLeft;
+      this.activeIndex = e.currentTarget.id;
+    },
     selectIcon(icon) {
       const onSelectIconSuccess = utils.getParentPage(this).onSelectIconSuccess;
       onSelectIconSuccess && onSelectIconSuccess(icon);
@@ -40,11 +68,17 @@ export default class Category extends wepy.page {
   };
 
   async onLoad() {
+    let res = await wepy.getSystemInfo();
+
+    this.sliderLeft = (res.windowWidth / this.tabs.length - sliderWidth) / 2;
+    this.sliderOffset = (res.windowWidth / this.tabs.length) * this.activeIndex;
+
     utils.showLoading();
     const result = await serverApi.iconList();
     utils.hideLoading();
 
     this.list = result.data;
+    this.imgUrl = result.imgUrl;
     this.$apply();
   }
 }
@@ -61,7 +95,16 @@ export default class Category extends wepy.page {
 
 .page-body {
   flex: 1;
-  padding: ~'10rpx';
+}
+
+.weui-navbar {
+  background-color: #fff;
+}
+
+.weui-tab__content {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 10rpx;
 }
 
 .icon-list {
@@ -69,7 +112,7 @@ export default class Category extends wepy.page {
   flex-wrap: wrap;
   flex-shrink: 0;
   position: relative;
-  padding: ~'10rpx' 0;
+  padding: 10rpx 0;
 
   &:before {
     .setBottomLine(@weuiLineColorLight);

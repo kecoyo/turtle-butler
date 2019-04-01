@@ -13,7 +13,7 @@
                 </view>
                 <view class="item-icon">
                   <view class="icon">
-                    <image wx:if="{{item.icon}}" src="{{serverUrl + item.icon}}" />
+                    <image wx:if="{{item.icon}}" src="{{imgUrl + item.icon}}" />
                     <image wx:else src="../images/default-category.png" />
                   </view>
                 </view>
@@ -78,7 +78,7 @@ export default class Category extends wepy.page {
   };
 
   data = {
-    serverUrl: env.serverUrl,
+    imgUrl: '',
 
     categorys: [],
     delIds: [],
@@ -251,6 +251,7 @@ export default class Category extends wepy.page {
       .then(res => {
         utils.hideLoading();
         this.categorys = res.data;
+        this.imgUrl = res.imgUrl;
         this.$apply();
       })
       .catch(err => {

@@ -7,7 +7,7 @@ const propertyApi = {
   /**
    * 列表
    */
-  list: params => request.get('property/list', params)
+  list: params => request.get('/property/list', params)
 };
 
 export default propertyApi;

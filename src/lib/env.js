@@ -3,8 +3,7 @@
  */
 const devServer = 'http://localhost:8360';
 const development = {
-  serverUrl: `${devServer}/`,
-  apiUrl: `${devServer}/api/`
+  apiUrl: `${devServer}/butler`
 };
 
 /**
@@ -12,8 +11,7 @@ const development = {
  */
 const prodServer = 'https://zaifumo.kecoyo.com';
 const production = {
-  serverUrl: `${prodServer}/`,
-  apiUrl: `${prodServer}/api/`
+  apiUrl: `${prodServer}/butler`
 };
 
 export default production;

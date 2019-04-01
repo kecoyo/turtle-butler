@@ -13,7 +13,7 @@
                 </view>
                 <view class="item-icon">
                   <view class="icon">
-                    <image src="{{serverUrl + item.icon}}" />
+                    <image src="{{imgUrl + item.icon}}" />
                   </view>
                 </view>
                 <view class="item-title">
@@ -75,7 +75,7 @@ export default class Account extends wepy.page {
   };
 
   data = {
-    serverUrl: env.serverUrl,
+    imgUrl: '',
 
     category: null, // 分类
     accounts: [], // 列表数据
@@ -230,6 +230,7 @@ export default class Account extends wepy.page {
       .then(res => {
         utils.hideLoading();
         this.accounts = res.data;
+        this.imgUrl = res.imgUrl;
         this.$apply();
       })
       .catch(err => {

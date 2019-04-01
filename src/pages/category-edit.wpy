@@ -17,7 +17,7 @@
           </view>
           <view class="weui-cell__bd">
             <view class="icon" bindtap="bindSelectIcon">
-              <image wx:if="{{item.icon}}" src="{{serverUrl + item.icon}}" />
+              <image wx:if="{{item.icon}}" src="{{imgUrl + item.icon}}" />
               <image wx:else src="../images/default-category.png" />
             </view>
           </view>
@@ -43,7 +43,7 @@ export default class CategoryEdit extends wepy.page {
   };
 
   data = {
-    serverUrl: env.serverUrl,
+    imgUrl: '',
     item: null
   };
 
@@ -85,6 +85,7 @@ export default class CategoryEdit extends wepy.page {
       })
       .then(result => {
         this.item = result.data;
+        this.imgUrl = result.imgUrl;
         this.$apply();
       })
       .catch(err => {
