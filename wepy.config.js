@@ -31,6 +31,9 @@ module.exports = {
       presets: ['es2015', 'stage-1'],
       plugins: ['transform-export-extensions', 'syntax-export-extensions']
     }
+  },
+  appConfig: {
+    baseUrl: prod ? 'https://zaifumo.kecoyo.com' : 'http://127.0.0.1:8360'
   }
 };
 

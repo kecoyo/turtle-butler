@@ -78,7 +78,7 @@
                     <view class="weui-uploader__files" id="uploaderFiles">
                       <block wx:for="{{account.pictures}}" wx:key="index">
                         <view class="weui-uploader__file" bindtap="bindPreviewImage({{index}})">
-                          <image class="weui-uploader__img" src="{{item.filePath?item.filePath:imgUrl+item.url}}" mode="aspectFill" />
+                          <image class="weui-uploader__img" src="{{item.id?imgUrl+item.url:item.url}}" mode="aspectFill" />
                           <icon wx:if="{{isEditing}}" class="iconfont icon-remove weui-uploader__icon" catchtap="bindRemovePicture({{index}})" />
                         </view>
                       </block>
@@ -142,7 +142,6 @@
 import wepy from 'wepy';
 import accountApi from '../apis/accountApi';
 import fileApi from '../apis/fileApi';
-import env from '../lib/env';
 import utils from '../lib/utils';
 import TextItem from '../components/text-item';
 import NumberItem from '../components/number-item';
@@ -227,14 +226,20 @@ export default class AccountDetail extends wepy.page {
       let { id, category_id, title, subtitle, icon, remark } = account;
       let properties = account.propertys;
       let pictures = account.pictures;
-      accountApi
-        .save({
-          account: { id, category_id, title, subtitle, icon, remark },
-          properties,
-          pictures,
-          delPropIds,
-          delPicIds
-        })
+      Promise.all(
+        account.pictures
+          .filter(pic => !pic.id) //
+          .map(pic => accountApi.uploadPicture(pic.url).then(res => (pic.url = res.data.path)))
+      )
+        .then(() =>
+          accountApi.save({
+            account: { id, category_id, title, subtitle, icon, remark },
+            properties,
+            pictures,
+            delPropIds,
+            delPicIds
+          })
+        )
         .then(res => {
           utils.hideLoading();
           utils.showToast('保存成功', 'success');
@@ -401,10 +406,14 @@ export default class AccountDetail extends wepy.page {
       });
       res.tempFilePaths.forEach(filePath => {
         this.account.pictures.push({
-          filePath
+          url: filePath
         });
       });
-      this.uploadImage();
+      console.log('TCL: AccountDetail -> chooseImage -> res', res);
+      console.log('TCL: AccountDetail -> chooseImage -> this.account.pictures', this.account.pictures);
+      this.$apply();
+      // console.log('TCL: AccountDetail -> chooseImage -> res.tempFilePaths', res.tempFilePaths);
+      // this.uploadImage();
     },
     bindPreviewImage(index, e) {
       let pictures = this.account.pictures;

@@ -1,10 +1,12 @@
-import env from './env';
+import wepy from 'wepy';
+
+const apiUrl = wepy.$appConfig.baseUrl + '/butler';
 
 const request = {
   get(url, params, config) {
     return new Promise((resolve, reject) => {
       wx.request({
-        url: env.apiUrl + url,
+        url: apiUrl + url,
         data: params,
         header: {
           'Content-Type': 'application/json'
@@ -29,7 +31,7 @@ const request = {
     return new Promise((resolve, reject) => {
       wx.request({
         method: 'POST',
-        url: env.apiUrl + url,
+        url: apiUrl + url,
         data: data,
         header: {
           'Content-Type': 'application/json'
@@ -52,7 +54,7 @@ const request = {
   uploadFile(url, name, filePath) {
     return new Promise((resolve, reject) => {
       wx.uploadFile({
-        url: env.apiUrl + url,
+        url: apiUrl + url,
         name,
         filePath,
         header: {},

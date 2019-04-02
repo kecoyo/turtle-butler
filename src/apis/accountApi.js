@@ -27,7 +27,9 @@ const accountApi = {
   /**
    * 保存所有
    */
-  saveAll: data => request.post('/account/saveAll', data)
+  saveAll: data => request.post('/account/saveAll', data),
+
+  uploadPicture: filePath => request.uploadFile('/account/uploadPicture', 'file', filePath)
 };
 
 export default accountApi;
