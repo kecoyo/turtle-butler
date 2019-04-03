@@ -29,6 +29,9 @@ const accountApi = {
    */
   saveAll: data => request.post('/account/saveAll', data),
 
+  /**
+   * 上传图片
+   */
   uploadPicture: filePath => request.uploadFile('/account/uploadPicture', 'file', filePath)
 };
 

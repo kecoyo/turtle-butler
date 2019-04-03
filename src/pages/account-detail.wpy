@@ -78,7 +78,7 @@
                     <view class="weui-uploader__files" id="uploaderFiles">
                       <block wx:for="{{account.pictures}}" wx:key="index">
                         <view class="weui-uploader__file" bindtap="bindPreviewImage({{index}})">
-                          <image class="weui-uploader__img" src="{{item.id?imgUrl+item.url:item.url}}" mode="aspectFill" />
+                          <image class="weui-uploader__img" src="{{item.clean?imgUrl+item.url:item.url}}" mode="aspectFill" />
                           <icon wx:if="{{isEditing}}" class="iconfont icon-remove weui-uploader__icon" catchtap="bindRemovePicture({{index}})" />
                         </view>
                       </block>
@@ -141,7 +141,6 @@
 <script>
 import wepy from 'wepy';
 import accountApi from '../apis/accountApi';
-import fileApi from '../apis/fileApi';
 import utils from '../lib/utils';
 import TextItem from '../components/text-item';
 import NumberItem from '../components/number-item';
@@ -224,20 +223,21 @@ export default class AccountDetail extends wepy.page {
 
       utils.showLoading();
       let { id, category_id, title, subtitle, icon, remark } = account;
-      let properties = account.propertys;
-      let pictures = account.pictures;
+      // let properties = account.propertys;
+      // let pictures = account.pictures;
       Promise.all(
         account.pictures
           .filter(pic => !pic.id) //
-          .map(pic => accountApi.uploadPicture(pic.url).then(res => (pic.url = res.data.path)))
+          .map(pic => accountApi.uploadPicture(pic.url).then(res => ((pic.url = res.data), (pic.clean = true))))
       )
         .then(() =>
           accountApi.save({
-            account: { id, category_id, title, subtitle, icon, remark },
-            properties,
-            pictures,
-            delPropIds,
-            delPicIds
+            account
+            // : { id, category_id, title, subtitle, icon, remark }
+            // properties,
+            // pictures,
+            // delPropIds,
+            // delPicIds
           })
         )
         .then(res => {
@@ -409,11 +409,7 @@ export default class AccountDetail extends wepy.page {
           url: filePath
         });
       });
-      console.log('TCL: AccountDetail -> chooseImage -> res', res);
-      console.log('TCL: AccountDetail -> chooseImage -> this.account.pictures', this.account.pictures);
       this.$apply();
-      // console.log('TCL: AccountDetail -> chooseImage -> res.tempFilePaths', res.tempFilePaths);
-      // this.uploadImage();
     },
     bindPreviewImage(index, e) {
       let pictures = this.account.pictures;
@@ -432,41 +428,6 @@ export default class AccountDetail extends wepy.page {
       pictures.splice(index, 1);
     }
   };
-
-  uploadImage() {
-    let promiseFuncArr = this.account.pictures.map(pic => {
-      return () => {
-        if (pic.filePath) {
-          return fileApi.upload(pic.filePath);
-        } else {
-          return Promise.resolve();
-        }
-      };
-    });
-
-    var p = Promise.resolve();
-    // 依次执行数组中的函数，并将返回的Promise替换p
-    for (var i = 0; i <= promiseFuncArr.length; i++) {
-      (i => {
-        p = p.then(data => {
-          if (i > 0 && data) {
-            this.account.pictures[i - 1].url = data.data.path;
-            delete this.account.pictures[i - 1].filePath;
-            console.log('TCL: AccountDetail -> uploadImage -> this.account', this.account);
-            this.$apply();
-          }
-          if (i === promiseFuncArr.length) {
-            this.$apply();
-            return null;
-          }
-          // 当i为4时，return promiseFuncArr[4]()后，循环退出，
-          // 没有then方法获取promiseFuncArr[4]()的回调
-          // 因此我们多循环一次
-          return promiseFuncArr[i]();
-        });
-      })(i);
-    }
-  }
 
   onAddProperty(property) {
     property.account_id = this.account.id;
