@@ -42,7 +42,7 @@ export default class Category extends wepy.page {
     list: [],
     imgUrl: '',
 
-    tabs: ['选项一', '选项二', '选项三'],
+    tabs: [],
 
     activeIndex: 0,
     sliderOffset: 0,

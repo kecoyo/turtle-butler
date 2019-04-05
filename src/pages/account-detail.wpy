@@ -166,8 +166,6 @@ export default class AccountDetail extends wepy.page {
     imgUrl: '',
 
     account: null, // 账号信息
-    delPropIds: [], // 删除的属性ID
-    delPicIds: [], // 删除的图片ID
 
     isEditing: false, // 编辑状态
     hasChanged: false, // 有改变
@@ -208,8 +206,6 @@ export default class AccountDetail extends wepy.page {
     },
     bindEditDone() {
       let account = this.account;
-      let delPropIds = this.delPropIds;
-      let delPicIds = this.delPicIds;
 
       if (account.title === '') {
         utils.showToast('请输入账号名称');
@@ -222,24 +218,17 @@ export default class AccountDetail extends wepy.page {
       }
 
       utils.showLoading();
-      let { id, category_id, title, subtitle, icon, remark } = account;
-      // let properties = account.propertys;
-      // let pictures = account.pictures;
       Promise.all(
         account.pictures
           .filter(pic => !pic.id) //
-          .map(pic => accountApi.uploadPicture(pic.url).then(res => ((pic.url = res.data), (pic.clean = true))))
+          .map(pic =>
+            accountApi.uploadPicture(pic.url).then(res => {
+              pic.url = res.data;
+              pic.clean = true;
+            })
+          )
       )
-        .then(() =>
-          accountApi.save({
-            account
-            // : { id, category_id, title, subtitle, icon, remark }
-            // properties,
-            // pictures,
-            // delPropIds,
-            // delPicIds
-          })
-        )
+        .then(() => accountApi.save({ account }))
         .then(res => {
           utils.hideLoading();
           utils.showToast('保存成功', 'success');
@@ -305,7 +294,7 @@ export default class AccountDetail extends wepy.page {
 
       y2 = e.touches[0].clientY - y + y1 + index * itemHeight;
 
-      console.log(e, e.touches[0].clientY, y, y1, y2);
+      // console.log(e, e.touches[0].clientY, y, y1, y2);
 
       let propertys = this.account.propertys;
       var toIndex = 0;
@@ -366,15 +355,10 @@ export default class AccountDetail extends wepy.page {
     },
     bindDelProperty(index) {
       let propertys = this.account.propertys;
-      let item = propertys[index];
-
       this.removeIndex = -1;
       this.itemWrapInAni = this.itemWrapInAni2;
 
       propertys.splice(index, 1);
-      if (item.id) {
-        this.delPropIds.push(item.id);
-      }
       this.hasChanged = true;
     },
     bindPageTap() {
@@ -421,10 +405,6 @@ export default class AccountDetail extends wepy.page {
     },
     bindRemovePicture(index) {
       let pictures = this.account.pictures;
-      let picture = pictures[index];
-      if (picture.id) {
-        this.delPicIds.push(picture.id);
-      }
       pictures.splice(index, 1);
     }
   };
@@ -475,6 +455,7 @@ export default class AccountDetail extends wepy.page {
             ...result.data,
             category_id: categoryId
           };
+          this.imgUrl = result.imgUrl;
           this.isEditing = true;
           this.hasChanged = true;
           this.$apply();
@@ -530,24 +511,24 @@ export default class AccountDetail extends wepy.page {
 @import '../style/weui.less';
 
 .space {
-  height: ~'20rpx';
+  height: 20rpx;
 }
 
 .account {
   background-color: #ffffff;
   display: flex;
   flex: 1;
-  padding: ~'20rpx' 0 ~'20rpx' ~'20rpx';
+  padding: 20rpx 0 20rpx 20rpx;
 
   .account-icon {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 0 ~'15rpx';
+    padding: 0 15rpx;
 
     .icon {
-      width: ~'90rpx';
-      height: ~'90rpx';
+      width: 90rpx;
+      height: 90rpx;
       background-color: @weuiBgColorDefault;
       border-radius: 50%;
       display: flex;
@@ -570,11 +551,11 @@ export default class AccountDetail extends wepy.page {
     .title {
       display: flex;
       align-items: center;
-      font-size: ~'30rpx';
-      height: ~'45rpx';
+      font-size: 30rpx;
+      height: 45rpx;
       color: @weuiTextColorTitle;
       font-weight: bold;
-      padding: ~'5rpx';
+      padding: 5rpx;
 
       input {
         width: 100%;
@@ -588,9 +569,9 @@ export default class AccountDetail extends wepy.page {
 }
 
 .property-item {
-  @width: ~'750rpx';
-  @height: ~'90rpx';
-  @leftGap: ~'30rpx';
+  @width: 750rpx;
+  @height: 90rpx;
+  @leftGap: 30rpx;
   position: relative;
   width: @width;
   height: @height;
@@ -628,15 +609,15 @@ export default class AccountDetail extends wepy.page {
     align-items: center;
     color: @weuiColorWarn;
     flex-shrink: 0;
-    width: ~'0rpx';
+    width: 0rpx;
   }
 
   .item-name {
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    width: ~'200rpx';
-    padding-left: ~'30rpx';
+    width: 200rpx;
+    padding-left: 30rpx;
 
     text {
       font-size: @weuiFontSize;
@@ -661,7 +642,7 @@ export default class AccountDetail extends wepy.page {
     justify-content: flex-start;
     align-items: center;
     flex-shrink: 0;
-    width: ~'0rpx';
+    width: 0rpx;
 
     icon {
       color: @weuiTextColorGray;
@@ -674,7 +655,7 @@ export default class AccountDetail extends wepy.page {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: ~'150rpx';
+    width: 150rpx;
     flex-shrink: 0;
   }
 }
@@ -691,7 +672,7 @@ export default class AccountDetail extends wepy.page {
 }
 
 .weui-textarea {
-  height: 4em;
+  min-height: 4em;
 }
 
 .weui-uploader__file {

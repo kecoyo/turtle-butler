@@ -77,10 +77,8 @@ export default class Category extends wepy.page {
   };
 
   data = {
-    imgUrl: '',
-
     categorys: [],
-    delIds: [],
+    imgUrl: '',
 
     isEditing: false, // 编辑状态
     hasChanged: false, // 有改变
@@ -121,21 +119,21 @@ export default class Category extends wepy.page {
     bindEditDone() {
       if (this.hasChanged) {
         let categorys = this.categorys.map(item => ({ id: item.id }));
-        let delIds = this.delIds;
 
         utils.showLoading();
-        categoryApi
-          .saveAll({
-            categorys,
-            delIds
-          })
-          .then(result => {
-            utils.hideLoading();
-            utils.showToast('保存成功', 'success');
-            this.isEditing = false;
-            this.hasChanged = false;
+        categoryApi.saveAll({ categorys }).then(result => {
+          utils.hideLoading();
+          if (result.errno) {
+            utils.showToast('保存失败，' + result.errmsg);
             this.$apply();
-          });
+            return;
+          }
+
+          utils.showToast('保存成功', 'success');
+          this.isEditing = false;
+          this.hasChanged = false;
+          this.$apply();
+        });
       } else {
         this.isEditing = false;
         this.removeIndex = -1;
@@ -221,9 +219,6 @@ export default class Category extends wepy.page {
       this.itemWrapInAni = this.itemWrapInAni2;
 
       this.categorys.splice(index, 1);
-      if (item.id) {
-        this.delIds.push(item.id);
-      }
       this.hasChanged = true;
     },
     bindScroll(e) {}
@@ -259,9 +254,7 @@ export default class Category extends wepy.page {
       });
   }
 
-  onLoad() {
-    // this.fetchCategorys();
-  }
+  onLoad() {}
 
   onShow() {
     this.fetchCategorys();

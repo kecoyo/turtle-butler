@@ -38,7 +38,7 @@ import categoryApi from '../apis/categoryApi';
 
 export default class CategoryEdit extends wepy.page {
   config = {
-    navigationBarTitleText: '编辑属性'
+    navigationBarTitleText: ''
   };
 
   data = {
@@ -77,8 +77,10 @@ export default class CategoryEdit extends wepy.page {
     Promise.resolve()
       .then(result => {
         if (id) {
+          wx.setNavigationBarTitle({ title: '修改分类' });
           return categoryApi.detail(id);
         } else {
+          wx.setNavigationBarTitle({ title: '添加分类' });
           return categoryApi.new();
         }
       })

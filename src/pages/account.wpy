@@ -75,10 +75,8 @@ export default class Account extends wepy.page {
 
   data = {
     imgUrl: '',
-
     category: null, // 分类
     accounts: [], // 列表数据
-    delIds: [], // 删除的账号id
 
     isEditing: false, // 编辑状态
     hasChanged: false, // 有改变
@@ -115,11 +113,10 @@ export default class Account extends wepy.page {
     bindEditDone() {
       if (this.hasChanged) {
         let accounts = this.accounts.map(item => ({ id: item.id }));
-        let delIds = this.delIds;
 
         utils.showLoading();
         accountApi
-          .saveAll({ accounts, delIds })
+          .saveAll({ categoryId: this.categoryId, accounts })
           .then(result => {
             utils.hideLoading();
             utils.showSuccess('保存成功');
@@ -192,7 +189,7 @@ export default class Account extends wepy.page {
       this.hasChanged = true;
     },
     bindAddAccount() {
-      utils.navigateTo('account-detail?categoryId=' + this.category.id);
+      utils.navigateTo('account-detail?categoryId=' + this.categoryId);
     },
     bindRemoveCategory(index) {
       this.removeIndex = index;
@@ -209,9 +206,6 @@ export default class Account extends wepy.page {
       this.itemWrapInAni = this.itemWrapInAni2;
 
       this.accounts.splice(index, 1);
-      if (item.id) {
-        this.delIds.push(item.id);
-      }
       this.hasChanged = true;
     },
     bindScroll(e) {},
@@ -224,7 +218,7 @@ export default class Account extends wepy.page {
     utils.showLoading();
     accountApi
       .list({
-        categoryId: this.category.id
+        categoryId: this.categoryId
       })
       .then(res => {
         utils.hideLoading();
@@ -241,6 +235,8 @@ export default class Account extends wepy.page {
   onLoad(options) {
     const { categoryId, categoryName } = options;
 
+    this.categoryId = categoryId;
+    this.categoryName = categoryName;
     this.category = {
       id: categoryId,
       name: categoryName
@@ -248,8 +244,6 @@ export default class Account extends wepy.page {
 
     // 修改标题
     utils.setNavigationBarTitle(categoryName);
-
-    this.fetchAccounts();
   }
 
   onShow() {
