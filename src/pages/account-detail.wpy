@@ -21,7 +21,7 @@
         <view class="space"></view>
 
         <view class="property-list">
-          <repeat for="{{account.propertys}}" key="index" index="index" item="item">
+          <repeat for="{{account.properties}}" key="index" index="index" item="item">
             <view wx:if="{{toIndex == index && startIndex >= index}}" class="property-item" />
             <view class="property-item {{startIndex == index ? 'mainmove':'mainend'}}" style="{{startIndex === index ? ('top:'+ dragTop +'px') : ''}}">
               <view class="item-wrap" animation="{{removeIndex == index?itemWrapOutAni:itemWrapInAni}}">
@@ -78,7 +78,7 @@
                     <view class="weui-uploader__files" id="uploaderFiles">
                       <block wx:for="{{account.pictures}}" wx:key="index">
                         <view class="weui-uploader__file" bindtap="bindPreviewImage({{index}})">
-                          <image class="weui-uploader__img" src="{{item.clean?imgUrl+item.url:item.url}}" mode="aspectFill" />
+                          <image class="weui-uploader__img" src="{{item.upload?imgUrl+item.url:item.url}}" mode="aspectFill" />
                           <icon wx:if="{{isEditing}}" class="iconfont icon-remove weui-uploader__icon" catchtap="bindRemovePicture({{index}})" />
                         </view>
                       </block>
@@ -153,13 +153,13 @@ let itemHeight = utils.rem2px(90);
 
 export default class AccountDetail extends wepy.page {
   config = {
-    navigationBarTitleText: '账号详情'
+    navigationBarTitleText: '账号详情',
   };
 
   components = {
     'text-item': TextItem,
     'number-item': NumberItem,
-    'password-item': PasswordItem
+    'password-item': PasswordItem,
   };
 
   data = {
@@ -188,13 +188,13 @@ export default class AccountDetail extends wepy.page {
     itemRemoveOutAni: '',
 
     hasRemark: false,
-    hasPicture: false
+    hasPicture: false,
   };
 
   computed = {
     scrollViewHeight() {
       return utils.px2rem(wx.getSystemInfoSync().windowHeight) - 90;
-    }
+    },
   };
 
   methods = {
@@ -202,7 +202,7 @@ export default class AccountDetail extends wepy.page {
       this.isEditing = true;
       // 复制一份
       this.accountCopy = { ...this.account };
-      this.accountCopy.propertys = [...this.account.propertys];
+      this.accountCopy.properties = [...this.account.properties];
     },
     bindEditDone() {
       let account = this.account;
@@ -212,7 +212,7 @@ export default class AccountDetail extends wepy.page {
         return;
       }
 
-      if (account.propertys.length === 0) {
+      if (account.properties.length === 0) {
         utils.showToast('至少要添加一个属性');
         return;
       }
@@ -220,32 +220,31 @@ export default class AccountDetail extends wepy.page {
       utils.showLoading();
       Promise.all(
         account.pictures
-          .filter(pic => !pic.id) //
-          .map(pic =>
-            accountApi.uploadPicture(pic.url).then(res => {
+          .filter((pic) => !pic.upload) //
+          .map((pic) =>
+            accountApi.uploadPicture(pic.url).then((res) => {
               pic.url = res.data;
-              pic.clean = true;
+              pic.upload = true;
             })
           )
       )
         .then(() => accountApi.save({ account }))
-        .then(res => {
+        .then((res) => {
           utils.hideLoading();
           utils.showToast('保存成功', 'success');
 
-          let account2 = res.data;
-          this.account = account2;
+          this.account.id = res.data;
           this.delPropIds = [];
           this.delPicIds = [];
-          this.hasPicture = account2.pictures && account2.pictures.length > 0;
-          this.hasRemark = account2.remark && account2.remark.length !== 0;
+          this.hasPicture = this.account.pictures && this.account.pictures.length > 0;
+          this.hasRemark = this.account.remark && this.account.remark.length !== 0;
 
           this.isEditing = false;
           this.removeIndex = -1;
           this.hasChanged = false;
           this.$apply();
         })
-        .catch(err => {
+        .catch((err) => {
           utils.hideLoading();
           utils.showToast(err.message);
         });
@@ -259,7 +258,7 @@ export default class AccountDetail extends wepy.page {
     bindSelectIcon() {
       if (this.isEditing) {
         wx.navigateTo({
-          url: 'select-icon'
+          url: 'select-icon',
         });
       }
     },
@@ -268,7 +267,7 @@ export default class AccountDetail extends wepy.page {
       this.hasChanged = true;
     },
     bindValueInput(index, e) {
-      this.account.propertys[index].value = e.detail.value;
+      this.account.properties[index].value = e.detail.value;
       this.hasChanged = true;
     },
     bindAddProperty() {
@@ -296,9 +295,9 @@ export default class AccountDetail extends wepy.page {
 
       // console.log(e, e.touches[0].clientY, y, y1, y2);
 
-      let propertys = this.account.propertys;
+      let properties = this.account.properties;
       var toIndex = 0;
-      for (var i = 1; i < propertys.length; i++) {
+      for (var i = 1; i < properties.length; i++) {
         if (y2 > itemHeight * (i - 1) + itemHeight / 2) {
           toIndex = i;
         }
@@ -310,10 +309,10 @@ export default class AccountDetail extends wepy.page {
     bindMoveEnd: function(index, e) {
       if (!this.isEditing) return;
 
-      let propertys = this.account.propertys;
-      var item = propertys[this.startIndex];
-      propertys.splice(this.startIndex, 1);
-      propertys.splice(this.toIndex, 0, item);
+      let properties = this.account.properties;
+      var item = properties[this.startIndex];
+      properties.splice(this.startIndex, 1);
+      properties.splice(this.toIndex, 0, item);
 
       this.startIndex = -1;
       this.toIndex = -1;
@@ -328,7 +327,7 @@ export default class AccountDetail extends wepy.page {
         duration: 400,
         timingFunction: 'ease',
         delay: 0,
-        transformOrigin: '%50 %50 0'
+        transformOrigin: '%50 %50 0',
       });
 
       let px = utils.rem2px(120);
@@ -344,7 +343,7 @@ export default class AccountDetail extends wepy.page {
         duration: 400,
         timingFunction: 'ease',
         delay: 0,
-        transformOrigin: '%50 %50 0'
+        transformOrigin: '%50 %50 0',
       });
 
       // 设置动画
@@ -354,11 +353,11 @@ export default class AccountDetail extends wepy.page {
       this.removeAnimation2 = removeAnimation2.export();
     },
     bindDelProperty(index) {
-      let propertys = this.account.propertys;
+      let properties = this.account.properties;
       this.removeIndex = -1;
       this.itemWrapInAni = this.itemWrapInAni2;
 
-      propertys.splice(index, 1);
+      properties.splice(index, 1);
       this.hasChanged = true;
     },
     bindPageTap() {
@@ -369,9 +368,9 @@ export default class AccountDetail extends wepy.page {
     bindItemValueLongTap(item) {
       wx.setClipboardData({
         data: item.value,
-        success: res => {
+        success: (res) => {
           utils.showToast('复制成功');
-        }
+        },
       });
     },
     bindRemarkInput(e) {
@@ -386,32 +385,31 @@ export default class AccountDetail extends wepy.page {
     async chooseImage(e) {
       let res = await wepy.chooseImage({
         sizeType: ['original', 'compressed'], // 可以指定是原图还是压缩图，默认二者都有
-        sourceType: ['album', 'camera'] // 可以指定来源是相册还是相机，默认二者都有
+        sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
       });
-      res.tempFilePaths.forEach(filePath => {
+      res.tempFilePaths.forEach((filePath) => {
         this.account.pictures.push({
-          url: filePath
+          url: filePath,
         });
       });
       this.$apply();
     },
     bindPreviewImage(index, e) {
       let pictures = this.account.pictures;
-      let urlFn = pic => pic.filePath || this.imgUrl + pic.url;
+      let urlFn = (pic) => pic.filePath || this.imgUrl + pic.url;
       wepy.previewImage({
         current: urlFn(pictures[index]), // 当前显示图片的http链接
-        urls: pictures.map(urlFn) // 需要预览的图片http链接列表
+        urls: pictures.map(urlFn), // 需要预览的图片http链接列表
       });
     },
     bindRemovePicture(index) {
       let pictures = this.account.pictures;
       pictures.splice(index, 1);
-    }
+    },
   };
 
   onAddProperty(property) {
-    property.account_id = this.account.id;
-    this.account.propertys.push(property);
+    this.account.properties.push(property);
     this.$apply();
   }
 
@@ -427,7 +425,7 @@ export default class AccountDetail extends wepy.page {
       utils.showLoading();
       accountApi
         .detail(id)
-        .then(res => {
+        .then((res) => {
           utils.hideLoading();
           this.account = res.data;
           this.imgUrl = res.imgUrl;
@@ -441,7 +439,7 @@ export default class AccountDetail extends wepy.page {
 
           this.$apply();
         })
-        .catch(err => {
+        .catch((err) => {
           utils.hideLoading();
           utils.showToast(err.message);
         });
@@ -449,18 +447,18 @@ export default class AccountDetail extends wepy.page {
       utils.showLoading();
       accountApi
         .new()
-        .then(result => {
+        .then((result) => {
           utils.hideLoading();
           this.account = {
             ...result.data,
-            category_id: categoryId
+            category_id: categoryId,
           };
           this.imgUrl = result.imgUrl;
           this.isEditing = true;
           this.hasChanged = true;
           this.$apply();
         })
-        .catch(err => {
+        .catch((err) => {
           utils.hideLoading();
           utils.showToast(err.message);
         });

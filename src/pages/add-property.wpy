@@ -13,12 +13,10 @@
         </view>
         <view class="weui-cell weui-cell_input">
           <view class="weui-cell__hd">
-            <view class="weui-label">类型</view>
+            <view class="weui-label">值</view>
           </view>
           <view class="weui-cell__bd">
-            <picker @change="bindTypeChange" value="{{type}}" range="{{types}}">
-              <view class="weui-input">{{types[type]}}</view>
-            </picker>
+            <input class="weui-input" placeholder="请输入值" value="{{value}}" @input="bindValueInput" />
           </view>
         </view>
       </view>
@@ -32,30 +30,28 @@
 
 <script>
 import wepy from 'wepy';
-import propertyTypes from '../lib/property-types';
 import utils from '../lib/utils';
 
 export default class AddProperty extends wepy.page {
   config = {
-    navigationBarTitleText: '添加属性'
+    navigationBarTitleText: '添加属性',
   };
 
   data = {
-    types: propertyTypes,
     name: '',
-    type: 0
+    value: '',
   };
 
   methods = {
     bindNameInput(e) {
       this.name = e.detail.value;
     },
-    bindTypeChange(e) {
-      this.type = e.detail.value;
+    bindValueInput(e) {
+      this.value = e.detail.value;
     },
     bindOkTap() {
       if (this.name.trim() === '') {
-        utils.showToast('请输入属性名称');
+        utils.showToast('请输入名称');
         return;
       }
 
@@ -63,11 +59,11 @@ export default class AddProperty extends wepy.page {
       if (onAddProperty) {
         onAddProperty({
           name: this.name,
-          type: Number(this.type) + 1
+          value: this.value,
         });
       }
       utils.navigateBack();
-    }
+    },
   };
 }
 </script>
