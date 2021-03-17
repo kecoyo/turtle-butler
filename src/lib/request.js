@@ -9,9 +9,9 @@ const request = {
         url: apiUrl + url,
         data: params,
         header: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        success: res => {
+        success: (res) => {
           let { data, statusCode } = res;
           if (statusCode === 200) {
             resolve(data);
@@ -19,10 +19,10 @@ const request = {
             reject(new Error('Error: ' + statusCode));
           }
         },
-        fail: err => {
+        fail: (err) => {
           reject(new Error('Error: ' + JSON.stringify(err)));
         },
-        ...config
+        ...config,
       });
     });
   },
@@ -34,9 +34,9 @@ const request = {
         url: apiUrl + url,
         data: data,
         header: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        success: res => {
+        success: (res) => {
           let { data, statusCode } = res;
           if (statusCode === 200) {
             resolve(data);
@@ -44,10 +44,10 @@ const request = {
             reject(new Error('Error: ' + statusCode));
           }
         },
-        fail: err => {
+        fail: (err) => {
           reject(new Error('Error: ' + JSON.stringify(err)));
         },
-        ...config
+        ...config,
       });
     });
   },
@@ -58,11 +58,11 @@ const request = {
         name,
         filePath,
         header: {},
-        success: res => resolve(JSON.parse(res.data)),
-        fail: err => reject(err)
+        success: (res) => resolve(JSON.parse(res.data)),
+        fail: (err) => reject(err),
       });
     });
-  }
+  },
 };
 
 export default request;

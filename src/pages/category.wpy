@@ -13,8 +13,7 @@
                 </view>
                 <view class="item-icon">
                   <view class="icon">
-                    <image wx:if="{{item.icon}}" src="{{imgUrl + item.icon}}" />
-                    <image wx:else src="../images/default-category.png" />
+                    <image src="{{item.icon}}" />
                   </view>
                 </view>
                 <view class="item-title">
@@ -73,12 +72,11 @@ let itemHeight = utils.rem2px(120);
 
 export default class Category extends wepy.page {
   config = {
-    navigationBarTitleText: '分组列表'
+    navigationBarTitleText: '分组列表',
   };
 
   data = {
     categorys: [],
-    imgUrl: '',
 
     isEditing: false, // 编辑状态
     hasChanged: false, // 有改变
@@ -102,13 +100,13 @@ export default class Category extends wepy.page {
     deleteAnimation: '',
 
     itemRemoveInAni: '',
-    itemRemoveOutAni: ''
+    itemRemoveOutAni: '',
   };
 
   computed = {
     scrollViewHeight() {
       return utils.px2rem(wx.getSystemInfoSync().windowHeight) - 90;
-    }
+    },
   };
 
   methods = {
@@ -116,29 +114,26 @@ export default class Category extends wepy.page {
       this.isEditing = true;
       this.categorys_ = this.categorys.slice(0);
     },
-    bindEditDone() {
+    async bindEditDone() {
       if (this.hasChanged) {
-        let categorys = this.categorys.map(item => ({ id: item.id }));
-
         utils.showLoading();
-        categoryApi.saveAll({ categorys }).then(result => {
+        try {
+          const ids = this.categorys.map((item) => item.id);
+          await categoryApi.saveList({ ids });
           utils.hideLoading();
-          if (result.errno) {
-            utils.showToast('保存失败，' + result.errmsg);
-            this.$apply();
-            return;
-          }
-
           utils.showToast('保存成功', 'success');
           this.isEditing = false;
           this.hasChanged = false;
-          this.$apply();
-        });
+        } catch (e) {
+          utils.hideLoading();
+          utils.showToast('保存失败，' + e.message);
+        }
       } else {
         this.isEditing = false;
         this.removeIndex = -1;
         this.hasChanged = false;
       }
+      this.$apply();
     },
     bindEditCancel() {
       this.categorys = this.categorys_;
@@ -221,7 +216,7 @@ export default class Category extends wepy.page {
       this.categorys.splice(index, 1);
       this.hasChanged = true;
     },
-    bindScroll(e) {}
+    bindScroll(e) {},
   };
 
   onAddCategory(item) {
@@ -238,20 +233,17 @@ export default class Category extends wepy.page {
     this.onLoad();
   }
 
-  fetchCategorys() {
+  async fetchCategorys() {
     utils.showLoading();
-    categoryApi
-      .list()
-      .then(res => {
-        utils.hideLoading();
-        this.categorys = res.data;
-        this.imgUrl = res.imgUrl;
-        this.$apply();
-      })
-      .catch(err => {
-        utils.hideLoading();
-        utils.showToast(err.message);
-      });
+    try {
+      const result = await categoryApi.list();
+      utils.hideLoading();
+      this.categorys = result.data;
+      this.$apply();
+    } catch (e) {
+      utils.hideLoading();
+      utils.showToast(e.message);
+    }
   }
 
   onLoad() {}
@@ -308,10 +300,10 @@ export default class Category extends wepy.page {
 }
 
 .category-item {
-  @leftGap: ~'30rpx';
+  @leftGap: 30rpx;
   position: relative;
-  height: ~'120rpx';
-  width: ~'750rpx';
+  height: 120rpx;
+  width: 750rpx;
 
   &:before {
     .setBottomLine(@weuiLineColorLight);
@@ -323,12 +315,12 @@ export default class Category extends wepy.page {
     position: absolute;
     top: 0;
     left: 0;
-    height: ~'120rpx';
+    height: 120rpx;
   }
 
   .item-content {
     display: flex;
-    width: ~'750rpx';
+    width: 750rpx;
     box-sizing: border-box;
     flex-shrink: 0;
   }
@@ -339,7 +331,7 @@ export default class Category extends wepy.page {
     align-items: center;
     color: @weuiColorWarn;
     flex-shrink: 0;
-    width: ~'0rpx';
+    width: 0rpx;
   }
 
   .item-delete {
@@ -348,8 +340,8 @@ export default class Category extends wepy.page {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: ~'150rpx';
-    flex-basis: ~'150rpx';
+    width: 150rpx;
+    flex-basis: 150rpx;
     flex-shrink: 0;
   }
 
@@ -360,8 +352,8 @@ export default class Category extends wepy.page {
     margin-left: @leftGap;
 
     .icon {
-      width: ~'90rpx';
-      height: ~'90rpx';
+      width: 90rpx;
+      height: 90rpx;
       background-color: @weuiBgColorDefault;
       border-radius: 50%;
       display: flex;
@@ -379,14 +371,14 @@ export default class Category extends wepy.page {
     display: flex;
     justify-content: space-between;
     flex-grow: 1;
-    padding-left: ~'30rpx';
-    padding-right: ~'40rpx';
+    padding-left: 30rpx;
+    padding-right: 40rpx;
     box-sizing: border-box;
 
     text {
       display: flex;
       align-items: center;
-      padding-right: ~'20rpx';
+      padding-right: 20rpx;
       font-size: @weuiFontSize;
       color: @weuiTextColorTitle;
       box-sizing: border-box;
@@ -409,7 +401,7 @@ export default class Category extends wepy.page {
     justify-content: flex-start;
     align-items: center;
     flex-shrink: 0;
-    width: ~'60rpx';
+    width: 60rpx;
     overflow: hidden;
 
     .count {
@@ -418,7 +410,7 @@ export default class Category extends wepy.page {
       align-items: center;
       font-size: @weuiFontSize;
       color: @weuiTextColorWarn;
-      width: ~'30rpx';
+      width: 30rpx;
     }
   }
 
@@ -426,7 +418,7 @@ export default class Category extends wepy.page {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding-right: ~'25rpx';
+    padding-right: 25rpx;
 
     icon {
       color: @weuiTextColorGray;
@@ -437,7 +429,7 @@ export default class Category extends wepy.page {
     display: flex;
     align-items: center;
     flex-shrink: 0;
-    width: ~'0rpx';
+    width: 0rpx;
     overflow: hidden;
 
     icon {
@@ -448,7 +440,7 @@ export default class Category extends wepy.page {
   .item-delete {
     background-color: @weuiColorWarn;
     color: @weuiTextColorWhite;
-    width: ~'120rpx';
+    width: 120rpx;
     display: flex;
     justify-content: center;
     align-items: center;

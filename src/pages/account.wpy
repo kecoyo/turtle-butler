@@ -13,11 +13,11 @@
                 </view>
                 <view class="item-icon">
                   <view class="icon">
-                    <image src="{{imgUrl + item.icon}}" />
+                    <image src="{{item.icon}}" />
                   </view>
                 </view>
                 <view class="item-title">
-                  <view class="title">{{item.title}}</view>
+                  <view class="title">{{item.name}}</view>
                   <view class="subtitle">{{item.subtitle}}</view>
                 </view>
                 <view class="item-right">
@@ -70,12 +70,13 @@ let itemHeight = utils.rem2px(120);
 
 export default class Account extends wepy.page {
   config = {
-    navigationBarTitleText: ''
+    navigationBarTitleText: '',
   };
 
   data = {
-    imgUrl: '',
-    category: null, // 分类
+    categoryId: 0, // 传入参数
+    categoryName: '', // 传入参数
+
     accounts: [], // 列表数据
 
     isEditing: false, // 编辑状态
@@ -96,13 +97,13 @@ export default class Account extends wepy.page {
     itemWrapInAni: '',
     deleteAnimation: '',
     itemRemoveInAni: '',
-    itemRemoveOutAni: ''
+    itemRemoveOutAni: '',
   };
 
   computed = {
     scrollViewHeight() {
       return utils.px2rem(wx.getSystemInfoSync().windowHeight) - 90;
-    }
+    },
   };
 
   methods = {
@@ -110,24 +111,21 @@ export default class Account extends wepy.page {
       this.isEditing = true;
       this.accounts_ = this.accounts.slice(0);
     },
-    bindEditDone() {
+    async bindEditDone() {
       if (this.hasChanged) {
-        let accounts = this.accounts.map(item => ({ id: item.id }));
-
         utils.showLoading();
-        accountApi
-          .saveAll({ categoryId: this.categoryId, accounts })
-          .then(result => {
-            utils.hideLoading();
-            utils.showSuccess('保存成功');
-            this.isEditing = false;
-            this.hasChanged = false;
-            this.$apply();
-          })
-          .catch(() => {
-            utils.hideLoading();
-            utils.showToast('保存失败');
-          });
+        try {
+          const ids = this.accounts.map((item) => item.id);
+          await accountApi.saveList({ categoryId: this.categoryId, ids });
+          utils.hideLoading();
+          utils.showSuccess('保存成功');
+          this.isEditing = false;
+          this.hasChanged = false;
+          this.$apply();
+        } catch (e) {
+          utils.hideLoading();
+          utils.showToast('保存失败');
+        }
       } else {
         this.isEditing = false;
         this.removeIndex = -1;
@@ -146,7 +144,7 @@ export default class Account extends wepy.page {
         return;
       }
 
-      utils.navigateTo(`account-detail?id=${item.id}`);
+      utils.navigateTo(`account-edit?id=${item.id}`);
     },
     bindMoveStart(index, e) {
       if (!this.isEditing) return;
@@ -189,7 +187,7 @@ export default class Account extends wepy.page {
       this.hasChanged = true;
     },
     bindAddAccount() {
-      utils.navigateTo('account-detail?categoryId=' + this.categoryId);
+      utils.navigateTo('account-edit?categoryId=' + this.categoryId);
     },
     bindRemoveCategory(index) {
       this.removeIndex = index;
@@ -210,26 +208,21 @@ export default class Account extends wepy.page {
     },
     bindScroll(e) {},
     addAccount() {
-      utils.navigateTo('account-detail?isEditing=true');
-    }
+      utils.navigateTo('account-edit?isEditing=true');
+    },
   };
 
-  fetchAccounts() {
+  async fetchAccounts() {
     utils.showLoading();
-    accountApi
-      .list({
-        categoryId: this.categoryId
-      })
-      .then(res => {
-        utils.hideLoading();
-        this.accounts = res.data;
-        this.imgUrl = res.imgUrl;
-        this.$apply();
-      })
-      .catch(err => {
-        utils.hideLoading();
-        utils.showToast(err.message);
-      });
+    try {
+      const result = await accountApi.list({ categoryId: this.categoryId });
+      utils.hideLoading();
+      this.accounts = result.data;
+      this.$apply();
+    } catch (e) {
+      utils.hideLoading();
+      utils.showToast(e.message);
+    }
   }
 
   onLoad(options) {
@@ -237,10 +230,6 @@ export default class Account extends wepy.page {
 
     this.categoryId = categoryId;
     this.categoryName = categoryName;
-    this.category = {
-      id: categoryId,
-      name: categoryName
-    };
 
     // 修改标题
     utils.setNavigationBarTitle(categoryName);

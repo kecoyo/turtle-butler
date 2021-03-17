@@ -13,40 +13,40 @@ const utils = {
   showLoading() {
     wx.showLoading({
       title: '数据加载中',
-      icon: 'loading'
+      icon: 'loading',
     });
   },
   hideLoading() {
     wx.hideLoading();
   },
-  showToast(title, icon) {
+  showToast(title = '', icon = 'none', duration = 1500) {
     return new Promise((resolve, reject) => {
       wx.showToast({
-        title: title || 'undefined',
-        icon: icon || 'none',
-        duration: 2000,
-        success: res => {
+        title: title,
+        icon: icon,
+        duration: duration,
+        success: (res) => {
           setTimeout(() => {
             resolve(res);
-          }, 2000);
+          }, duration);
         },
         fail: () => {
           reject(new Error('Error: wx.showToast'));
-        }
+        },
       });
     });
   },
-  showSuccess(title) {
-    return utils.showToast(title, 'success');
+  showSuccess(title, duration) {
+    return utils.showToast(title, 'success', duration);
   },
   html2Escape(sHtml) {
-    return sHtml.replace(/[<>&"]/g, function(c) {
+    return sHtml.replace(/[<>&"]/g, function (c) {
       return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c];
     });
   },
   escape2Html(str) {
     var arrEntities = { lt: '<', gt: '>', nbsp: ' ', amp: '&', quot: '"' };
-    return str.replace(/&(lt|gt|nbsp|amp|quot);/gi, function(all, t) {
+    return str.replace(/&(lt|gt|nbsp|amp|quot);/gi, function (all, t) {
       return arrEntities[t];
     });
   },
@@ -67,7 +67,7 @@ const utils = {
   // 页面跳转
   navigateTo(url) {
     wx.navigateTo({
-      url
+      url,
     });
   },
   // 页面跳转
@@ -76,9 +76,9 @@ const utils = {
   },
   setNavigationBarTitle(title) {
     wx.setNavigationBarTitle({
-      title
+      title,
     });
-  }
+  },
 };
 
 export default utils;

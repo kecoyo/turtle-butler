@@ -33,7 +33,7 @@ module.exports = {
     }
   },
   appConfig: {
-    baseUrl: prod ? 'https://zaifumo.kecoyo.com' : 'http://127.0.0.1:8360'
+    baseUrl: prod ? 'https://api.kecoyo.com' : 'http://127.0.0.1:8360'
   }
 };
 

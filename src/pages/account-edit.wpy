@@ -7,13 +7,13 @@
         <view class="account">
           <view class="account-icon">
             <view class="icon">
-              <image wx:if="{{imgUrl}}" src="{{imgUrl + account.icon}}" @tap="bindSelectIcon" />
+              <image src="{{account.icon}}" @tap="bindSelectIcon" />
             </view>
           </view>
           <view class="account-title">
             <view class="title">
-              <input wx:if="{{isEditing}}" value="{{account.title}}" @input="bindTitleInput" />
-              <text wx:else>{{account.title}}</text>
+              <input wx:if="{{isEditing}}" value="{{account.name}}" @input="bindTitleInput" />
+              <text wx:else>{{account.name}}</text>
             </view>
           </view>
         </view>
@@ -78,7 +78,7 @@
                     <view class="weui-uploader__files" id="uploaderFiles">
                       <block wx:for="{{account.pictures}}" wx:key="index">
                         <view class="weui-uploader__file" bindtap="bindPreviewImage({{index}})">
-                          <image class="weui-uploader__img" src="{{item.upload?imgUrl+item.url:item.url}}" mode="aspectFill" />
+                          <image class="weui-uploader__img" src="{{item.url}}" mode="aspectFill" />
                           <icon wx:if="{{isEditing}}" class="iconfont icon-remove weui-uploader__icon" catchtap="bindRemovePicture({{index}})" />
                         </view>
                       </block>
@@ -163,8 +163,6 @@ export default class AccountDetail extends wepy.page {
   };
 
   data = {
-    imgUrl: '',
-
     account: null, // 账号信息
 
     isEditing: false, // 编辑状态
@@ -205,49 +203,7 @@ export default class AccountDetail extends wepy.page {
       this.accountCopy.properties = [...this.account.properties];
     },
     bindEditDone() {
-      let account = this.account;
-
-      if (account.title === '') {
-        utils.showToast('请输入账号名称');
-        return;
-      }
-
-      if (account.properties.length === 0) {
-        utils.showToast('至少要添加一个属性');
-        return;
-      }
-
-      utils.showLoading();
-      Promise.all(
-        account.pictures
-          .filter((pic) => !pic.upload) //
-          .map((pic) =>
-            accountApi.uploadPicture(pic.url).then((res) => {
-              pic.url = res.data;
-              pic.upload = true;
-            })
-          )
-      )
-        .then(() => accountApi.save({ account }))
-        .then((res) => {
-          utils.hideLoading();
-          utils.showToast('保存成功', 'success');
-
-          this.account.id = res.data;
-          this.delPropIds = [];
-          this.delPicIds = [];
-          this.hasPicture = this.account.pictures && this.account.pictures.length > 0;
-          this.hasRemark = this.account.remark && this.account.remark.length !== 0;
-
-          this.isEditing = false;
-          this.removeIndex = -1;
-          this.hasChanged = false;
-          this.$apply();
-        })
-        .catch((err) => {
-          utils.hideLoading();
-          utils.showToast(err.message);
-        });
+      this.onSave();
     },
     bindEditCancel() {
       this.account = this.accountCopy;
@@ -396,7 +352,7 @@ export default class AccountDetail extends wepy.page {
     },
     bindPreviewImage(index, e) {
       let pictures = this.account.pictures;
-      let urlFn = (pic) => pic.filePath || this.imgUrl + pic.url;
+      let urlFn = (pic) => pic.filePath || pic.url;
       wepy.previewImage({
         current: urlFn(pictures[index]), // 当前显示图片的http链接
         urls: pictures.map(urlFn), // 需要预览的图片http链接列表
@@ -418,50 +374,109 @@ export default class AccountDetail extends wepy.page {
     this.hasChanged = true;
   }
 
-  onLoad(options) {
-    // = 3686
+  async onLoad(options) {
     const { categoryId, id } = options;
+
     if (id) {
       utils.showLoading();
-      accountApi
-        .detail(id)
-        .then((res) => {
-          utils.hideLoading();
-          this.account = res.data;
-          this.imgUrl = res.imgUrl;
-
-          if (this.account.remark) {
-            this.hasRemark = true;
-          }
-          if (this.account.pictures.length > 0) {
-            this.hasPicture = true;
-          }
-
-          this.$apply();
-        })
-        .catch((err) => {
-          utils.hideLoading();
-          utils.showToast(err.message);
-        });
+      try {
+        const result = await accountApi.detail(id);
+        utils.hideLoading();
+        this.account = result.data;
+        this.hasRemark = this.account.remark;
+        this.hasPicture = this.account.pictures.length > 0;
+        this.$apply();
+      } catch (e) {
+        console.log('🚀 ~ AccountDetail ~ onLoad ~ e', e);
+        utils.hideLoading();
+        utils.showToast(e.message);
+      }
     } else if (categoryId) {
-      utils.showLoading();
-      accountApi
-        .new()
-        .then((result) => {
-          utils.hideLoading();
-          this.account = {
-            ...result.data,
-            category_id: categoryId,
-          };
-          this.imgUrl = result.imgUrl;
-          this.isEditing = true;
-          this.hasChanged = true;
-          this.$apply();
-        })
-        .catch((err) => {
-          utils.hideLoading();
-          utils.showToast(err.message);
-        });
+      this.account = {
+        category_id: categoryId,
+        name: '新建账号',
+        icon: 'http://cdn.kecoyo.com/upload/butler_icon/8e/a89ea66e8a977b6b7cfe794c39a974.png',
+        properties: [{ name: '账号', value: 'kecoyo' }],
+        pictures: [],
+        remark: '',
+      };
+      this.hasRemark = this.account.remark;
+      this.hasPicture = this.account.pictures.length > 0;
+      this.isEditing = true;
+      this.hasChanged = true;
+      this.$apply();
+    }
+  }
+
+  async onSave(data) {
+    let account = this.account;
+
+    if (account.title === '') {
+      utils.showToast('请输入账号名称');
+      return;
+    }
+
+    if (account.properties.length === 0) {
+      utils.showToast('至少要添加一个属性');
+      return;
+    }
+
+    const uploadPicture = () => {
+      return Promise.all(
+        account.pictures
+          .filter((pic) => !pic.upload) //
+          .map((pic) =>
+            accountApi.uploadPicture(pic.url).then((res) => {
+              pic.url = res.data;
+              pic.upload = true;
+            })
+          )
+      );
+    };
+    utils.showLoading();
+    if (this.account.id) {
+      try {
+        await uploadPicture();
+        await accountApi.update({ account });
+
+        utils.hideLoading();
+        utils.showToast('保存成功', 'success');
+
+        this.delPropIds = [];
+        this.delPicIds = [];
+        this.hasPicture = this.account.pictures && this.account.pictures.length > 0;
+        this.hasRemark = this.account.remark && this.account.remark.length !== 0;
+
+        this.isEditing = false;
+        this.removeIndex = -1;
+        this.hasChanged = false;
+        this.$apply();
+      } catch (e) {
+        utils.hideLoading();
+        utils.showToast(e.message);
+      }
+    } else {
+      try {
+        await uploadPicture();
+        const result = await accountApi.add({ account });
+
+        utils.hideLoading();
+        utils.showToast('保存成功', 'success');
+
+        this.account.id = result.data;
+        this.delPropIds = [];
+        this.delPicIds = [];
+        this.hasPicture = this.account.pictures && this.account.pictures.length > 0;
+        this.hasRemark = this.account.remark && this.account.remark.length !== 0;
+
+        this.isEditing = false;
+        this.removeIndex = -1;
+        this.hasChanged = false;
+        this.$apply();
+      } catch (e) {
+        utils.hideLoading();
+        utils.showToast(e.message);
+      }
     }
   }
 

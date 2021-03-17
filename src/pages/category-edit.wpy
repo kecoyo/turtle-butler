@@ -1,7 +1,6 @@
 <template>
   <view class="page">
     <view hidden="{{!item}}" class="page__bd">
-      <view class="weui-cells__title"></view>
       <view class="weui-cells weui-cells_after-title">
         <view class="weui-cell weui-cell_input">
           <view class="weui-cell__hd">
@@ -16,9 +15,8 @@
             <view class="weui-label">图标</view>
           </view>
           <view class="weui-cell__bd">
-            <view class="icon" bindtap="bindSelectIcon">
-              <image wx:if="{{item.icon}}" src="{{imgUrl + item.icon}}" />
-              <image wx:else src="../images/default-category.png" />
+            <view class="category_icon" bindtap="bindSelectIcon">
+              <image src="{{item.icon}}" />
             </view>
           </view>
         </view>
@@ -38,12 +36,11 @@ import categoryApi from '../apis/categoryApi';
 
 export default class CategoryEdit extends wepy.page {
   config = {
-    navigationBarTitleText: ''
+    navigationBarTitleText: '',
   };
 
   data = {
-    imgUrl: '',
-    item: null
+    item: null,
   };
 
   methods = {
@@ -53,56 +50,75 @@ export default class CategoryEdit extends wepy.page {
     bindNameInput(e) {
       this.item.name = e.detail.value;
     },
-    bindOk() {
-      utils.showLoading();
-      categoryApi
-        .save(this.item)
-        .then(res => {
-          utils.getParentPage(this).onDataChanged();
+    async bindOk() {
+      if (!this.item.name.trim()) {
+        utils.showToast('名称不能为空');
+        return;
+      }
+
+      if (this.item.id) {
+        utils.showLoading();
+        try {
+          await categoryApi.update(this.item);
+          await utils.showSuccess('修改成功');
           utils.navigateBack();
-          utils.showSuccess(res.msg);
-        })
-        .catch(err => {
-          utils.showToast(err.message);
-        });
-    }
+          utils.getParentPage(this).onDataChanged();
+        } catch (e) {
+          utils.showToast('修改失败');
+        }
+      } else {
+        utils.showLoading();
+        try {
+          await categoryApi.add(this.item);
+          await utils.showSuccess('添加成功');
+          utils.navigateBack();
+          utils.getParentPage(this).onDataChanged();
+        } catch (e) {
+          utils.showToast('添加失败');
+        }
+      }
+    },
   };
 
   onSelectIconSuccess(icon) {
     this.item.icon = icon;
   }
 
-  onLoad(options) {
+  async onLoad(options) {
     let { id } = options;
-    Promise.resolve()
-      .then(result => {
-        if (id) {
-          wx.setNavigationBarTitle({ title: '修改分类' });
-          return categoryApi.detail(id);
-        } else {
-          wx.setNavigationBarTitle({ title: '添加分类' });
-          return categoryApi.new();
-        }
-      })
-      .then(result => {
+
+    if (id) {
+      wx.setNavigationBarTitle({ title: '修改分类' });
+      try {
+        const result = await categoryApi.detail(id);
         this.item = result.data;
-        this.imgUrl = result.imgUrl;
-        this.$apply();
-      })
-      .catch(err => {
-        utils.showToast(err.message);
-      });
+      } catch (e) {
+        utils.showToast('数据加载失败');
+      }
+    } else {
+      wx.setNavigationBarTitle({ title: '添加分类' });
+      this.item = {
+        name: '新建分类',
+        icon: 'http://cdn.kecoyo.com/upload/butler_icon/24/c74ba5f2a2e82ecdfab0f3da8a0893.png',
+      };
+    }
+    this.$apply();
   }
 }
 </script>
 
-<style type="less">
-.icon {
+<style style="less">
+.weui-cell_input {
+  height: 120rpx;
+}
+
+.category_icon {
   margin: 10rpx 0;
-  image {
-    display: block;
-    width: 100rpx;
-    height: 100rpx;
-  }
+}
+
+.category_icon image {
+  display: block;
+  width: 100rpx;
+  height: 100rpx;
 }
 </style>

@@ -7,14 +7,14 @@
                 @tap="tabClick">
             <view class="weui-navbar__title">{{item.name}}</view>
           </view>
-          <view class="weui-navbar__slider" style="left: {{sliderLeft}}px; transform: translateX({{sliderOffset}}px); -webkit-transform: translateX({{sliderOffset}}px);"></view>
+          <view class="weui-navbar__slider" style="width:{{sliderWidth}}px; transform: translateX({{sliderOffset}}px);"></view>
         </view>
         <view class="weui-tab__panel">
           <repeat for="{{list}}" item="item" index="index" key="index">
             <view class="weui-tab__content" hidden="{{activeIndex != index}}">
               <repeat for="{{item.icons}}" item="item2" index="index2" key="index2">
                 <view class="icon-item" bindtap="selectIcon({{item2}})">
-                  <image src="{{imgUrl + item2}}" />
+                  <image src="{{item2}}" />
                 </view>
               </repeat>
             </view>
@@ -27,32 +27,19 @@
 
 <script>
 import wepy from 'wepy';
-import serverApi from '../apis/serverApi';
+import iconApi from '../apis/iconApi';
 import utils from '../lib/utils';
-
-const sliderWidth = 96; // 需要设置slider的宽度，用于计算中间位置
 
 export default class Category extends wepy.page {
   config = {
-    navigationBarTitleText: '选择图标'
+    navigationBarTitleText: '选择图标',
   };
 
   data = {
-    callback: '',
     list: [],
-    imgUrl: '',
-
-    tabs: [],
-
     activeIndex: 0,
     sliderOffset: 0,
-    sliderLeft: 0,
-
-    types: {
-      app: '应用类',
-      bank: '银行类',
-      web: '网站类'
-    }
+    sliderWidth: 0,
   };
 
   methods = {
@@ -64,21 +51,19 @@ export default class Category extends wepy.page {
       const onSelectIconSuccess = utils.getParentPage(this).onSelectIconSuccess;
       onSelectIconSuccess && onSelectIconSuccess(icon);
       utils.navigateBack();
-    }
+    },
   };
 
   async onLoad() {
     let res = await wepy.getSystemInfo();
 
-    this.sliderLeft = (res.windowWidth / this.tabs.length - sliderWidth) / 2;
-    this.sliderOffset = (res.windowWidth / this.tabs.length) * this.activeIndex;
-
     utils.showLoading();
-    const result = await serverApi.iconList();
+    const result = await iconApi.list();
     utils.hideLoading();
 
     this.list = result.data;
-    this.imgUrl = result.imgUrl;
+    this.sliderWidth = res.windowWidth / this.list.length;
+    this.sliderOffset = this.sliderWidth * this.activeIndex;
     this.$apply();
   }
 }
